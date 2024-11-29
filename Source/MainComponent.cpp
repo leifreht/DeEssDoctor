@@ -48,9 +48,11 @@ MainComponent::~MainComponent()
 
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
-    processorManager.prepare(sampleRate, samplesPerBlockExpected, getMainBusNumInputChannels());
-    
+    processorManager.prepare(sampleRate, samplesPerBlockExpected, 2);
+//    processorManager.prepare(sampleRate, samplesPerBlockExpected, getMainBusNumInputChannels());
+//    processorManager.prepare(sampleRate, samplesPerBlockExpected, getTotalNumInputChannels());
 }
+
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
@@ -62,7 +64,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
     processorManager.processBlock(buffer);
 
     // Copy processed data back to the bufferToFill
-    bufferToFill.buffer->copyFrom(bufferToFill.startSample, 0, buffer, 0, buffer.getNumSamples());
+    bufferToFill.buffer->copyFrom(0, bufferToFill.startSample, buffer, 0, 0, buffer.getNumSamples());
 }
 
 void MainComponent::releaseResources()
@@ -89,13 +91,18 @@ void MainComponent::resized()
 
 void MainComponent::loadAudioFile()
 {
-    juce::FileChooser chooser("Select an audio file...",
-                              juce::File(),
-                              "*.wav;*.mp3;*.aiff");
+    auto chooser = std::make_unique<juce::FileChooser>(
+        "Select an audio file...", juce::File(), "*.wav;*.mp3;*.aiff");
 
-    if (chooser.browseForFileToOpen())
-    {
-        audioFile = chooser.getResult();
-        waveformDisplay.loadFile(audioFile);
-    }
+    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
+        [this](const juce::FileChooser& fc)
+        {
+            auto result = fc.getResult();
+
+            if (result.existsAsFile())
+            {
+                audioFile = result;
+                waveformDisplay.loadFile(audioFile);
+            }
+        });
 }
