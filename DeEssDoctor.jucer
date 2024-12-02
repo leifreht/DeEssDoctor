@@ -28,6 +28,10 @@
             file="Source/AlgorithmSelector.cpp"/>
       <FILE id="FS3Tng" name="AudioProcessorManager.h" compile="0" resource="0"
             file="Source/AudioProcessorManager.h"/>
+      <FILE id="jvaxNK" name="PositionOverlay.cpp" compile="1" resource="0"
+            file="Source/PositionOverlay.cpp"/>
+      <FILE id="nDCx8E" name="PositionOverlay.h" compile="0" resource="0"
+            file="Source/PositionOverlay.h"/>
       <FILE id="dMKGZQ" name="AudioProcessorManager.cpp" compile="1" resource="0"
             file="Source/AudioProcessorManager.cpp"/>
       <FILE id="KMrMB8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
