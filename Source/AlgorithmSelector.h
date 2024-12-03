@@ -22,7 +22,7 @@ public:
     juce::String getSelectedAlgorithm() const;
 
     std::function<void()> algorithmChanged; // Callback for when algorithm changes
-    
+
     void resized() override;
 
 private:

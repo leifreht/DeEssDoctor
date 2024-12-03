@@ -11,8 +11,8 @@
 #include "WaveformDisplay.h"
 
 WaveformDisplay::WaveformDisplay(int sourceSamplesPerWaveformSample,
-                                                   juce::AudioFormatManager& formatManager,
-                                                   juce::AudioThumbnailCache& cache)
+                                 juce::AudioFormatManager& formatManager,
+                                 juce::AudioThumbnailCache& cache)
     : waveform(sourceSamplesPerWaveformSample, formatManager, cache)
 {
     waveform.addChangeListener(this);
@@ -21,6 +21,17 @@ WaveformDisplay::WaveformDisplay(int sourceSamplesPerWaveformSample,
 void WaveformDisplay::setFile(const juce::File& file)
 {
     waveform.setSource(new juce::FileInputSource(file));
+}
+
+void WaveformDisplay::setSampleRate(double rate)
+{
+    sampleRate = rate;
+}
+
+void WaveformDisplay::setSibilantRegions(const std::vector<SibilantRegion>& regions)
+{
+    sibilantRegions = regions;
+    repaint();
 }
 
 void WaveformDisplay::paint(juce::Graphics& g)
@@ -38,11 +49,59 @@ void WaveformDisplay::paintIfNoFileLoaded(juce::Graphics& g)
     g.drawFittedText("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
 }
 
+//void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
+//{
+//    g.fillAll(juce::Colours::white);
+//
+//    // Draw the waveform
+//    g.setColour(juce::Colours::blue);
+//    waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+//
+//    // Overlay sibilant regions
+//    g.setColour(juce::Colours::red.withAlpha(0.5f)); // Semi-transparent red
+//
+//    for (const auto& region : sibilantRegions)
+//    {
+//        // Convert sample indices to time
+//        double startTime = (sampleRate > 0.0) ? (double)region.startSample / sampleRate : 0.0;
+//        double endTime = (sampleRate > 0.0) ? (double)region.endSample / sampleRate : 0.0;
+//
+//        // Convert time to x position
+//        float startX = (float)(startTime / waveform.getTotalLength()) * (float)getWidth();
+//        float endX = (float)(endTime / waveform.getTotalLength()) * (float)getWidth();
+//
+//        // Draw a rectangle over the sibilant region
+//        g.fillRect(startX, 0.0f, endX - startX, (float)getHeight());
+//    }
+//}
+
 void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
-    g.setColour(juce::Colours::red);
+
+    // Draw the waveform
+    g.setColour(juce::Colours::blue);
     waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+
+    // Overlay sibilant regions
+    g.setColour(juce::Colours::red.withAlpha(0.5f)); // Semi-transparent red
+
+    for (const auto& region : sibilantRegions)
+    {
+        // Convert sample indices to time
+        double startTime = (sampleRate > 0.0) ? (double)region.startSample / sampleRate : 0.0;
+        double endTime = (sampleRate > 0.0) ? (double)region.endSample / sampleRate : 0.0;
+
+        // Convert time to x position
+        float startX = (float)(startTime / waveform.getTotalLength()) * (float)getWidth();
+        float endX = (float)(endTime / waveform.getTotalLength()) * (float)getWidth();
+
+        // Create a Rectangle<float> explicitly
+        juce::Rectangle<float> rect(startX, 0.0f, endX - startX, (float)getHeight());
+
+        // Draw a rectangle over the sibilant region
+        g.fillRect(rect);
+    }
 }
 
 void WaveformDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)
@@ -55,38 +114,3 @@ void WaveformDisplay::waveformChanged()
 {
     repaint();
 }
-
-//WaveformDisplay::WaveformDisplay()
-//    : thumbnailCache(5), // Cache size for up to 5 thumbnails
-//      thumbnail(512, formatManager, thumbnailCache)
-//{
-//    formatManager.registerBasicFormats(); // Register WAV, MP3, etc.
-//    thumbnail.addChangeListener(this);    // Listen for thumbnail changes
-//}
-//
-//void WaveformDisplay::loadFile(const juce::File& audioFile)
-//{
-//    thumbnail.setSource(new juce::FileInputSource(audioFile));
-//    repaint(); // Repaint to show the new waveform
-//}
-//
-//void WaveformDisplay::paint(juce::Graphics& g)
-//{
-//    g.fillAll(juce::Colours::white);
-//
-//    if (thumbnail.getNumChannels() == 0)
-//    {
-//        g.setColour(juce::Colours::grey);
-//        g.drawFittedText("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
-//    }
-//    else
-//    {
-//        g.setColour(juce::Colours::blue);
-//        thumbnail.drawChannels(g, getLocalBounds(), 0.0, thumbnail.getTotalLength(), 1.0f);
-//    }
-//}
-//
-//void WaveformDisplay::resized()
-//{
-//    // No additional components to resize
-//}

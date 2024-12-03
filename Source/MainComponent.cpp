@@ -32,22 +32,10 @@ waveformDisplay(512, formatManager, waveformCache),
     fileLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(fileLabel);
     
-    // In the constructor
-    exportButton.setButtonText("Export...");
     addAndMakeVisible(exportButton);
-    exportButton.onClick = [this]()
-    {
-        // Implement export functionality here
-    };
-    
-//    addAndMakeVisible(waveformDisplay);
-//    addAndMakeVisible(mixerControl);
-//    addAndMakeVisible(loadButton);
-
-//    loadButton.setButtonText("Load Audio File");
-//    loadButton.onClick = [this]() { loadAudioFile(); };
-
-    // Connect the algorithm selector to the processor manager
+    exportButton.setButtonText("Export...");
+    exportButton.onClick = [this] { exportButtonClicked(); };
+        
     algorithmSelector.algorithmChanged = [this]()
     {
         auto selectedAlgorithm = algorithmSelector.getSelectedAlgorithm();
@@ -58,17 +46,10 @@ waveformDisplay(512, formatManager, waveformCache),
             processorManager.setAlgorithm(spectralAnalysisAlgorithm);
     };
 
-    // Connect filter controls to processor manager
     filterControl.frequencySlider.onValueChange = [this]()
     {
         processorManager.setFilterParameters(filterControl.getFrequency(), filterControl.getQFactor(), filterControl.getGain());
     };
-
-//    // Connect mixer control to processor manager
-//    mixerControl.mixSlider.onValueChange = [this]()
-//    {
-//        processorManager.setMixLevel(mixerControl.getMixLevel());
-//    };
 
     setSize(1200, 800);
     
@@ -86,14 +67,41 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+//    processorManager.prepare(sampleRate, samplesPerBlockExpected, getTotalNumInputChannels());
+    processorManager.prepare(sampleRate, samplesPerBlockExpected, 2);
+    
+    waveformDisplay.setSampleRate(sampleRate);
+    
+    currentSampleRate = sampleRate;
+
 }
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
     if (readerSource.get() == nullptr)
+    {
         bufferToFill.clearActiveBufferRegion();
-    else
-        transportSource.getNextAudioBlock(bufferToFill);
+        return;
+    }
+
+    // Get audio from transport source
+    juce::AudioBuffer<float> mainBuffer;
+    mainBuffer.makeCopyOf(*bufferToFill.buffer);
+
+    transportSource.getNextAudioBlock(bufferToFill);
+
+    // Process the buffer
+    processorManager.processBlock(mainBuffer);
+
+    // Copy processed data back to bufferToFill
+    for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+    {
+        bufferToFill.buffer->copyFrom(channel, bufferToFill.startSample, mainBuffer, channel, 0, bufferToFill.numSamples);
+    }
+
+    // Retrieve detected sibilant regions for visualization
+    detectedSibilantRegions = processorManager.getSibilantRegions();
+    waveformDisplay.setSibilantRegions(detectedSibilantRegions);
 }
 
 void MainComponent::releaseResources()
@@ -101,50 +109,26 @@ void MainComponent::releaseResources()
     transportSource.releaseResources();
 }
 
-//void MainComponent::resized()
-//{
-//    // set bounds is x, y, w and h
-//    
-////    auto area = getLocalBounds();
-////    auto controlHeight = 50;
-//    openButton.setBounds(getWidth() - (getWidth() / 4), 10, getWidth() / 4, 20);
-//    playButton.setBounds(10, 40, getWidth() - 20, 20);
-//    stopButton.setBounds(10, 70, getWidth() - 20, 20);
-//
-//    juce::Rectangle<int> displayBounds(10, 100, getWidth() - 20, getHeight() - 120);
-//    waveformDisplay.setBounds(displayBounds);
-//    positionOverlay.setBounds(displayBounds);
-//    
-//
-////    algorithmSelector.setBounds(area.removeFromTop(controlHeight));
-////    filterControl.setBounds(area.removeFromTop(controlHeight));
-////    loadButton.setBounds(area.removeFromTop(controlHeight));
-////    mixerControl.setBounds(area.removeFromTop(controlHeight));
-////    waveformDisplay.setBounds(area);
-//}
-
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Define height proportions
     const int topSectionHeight = bounds.getHeight() / 16;
     const int middleSectionHeight = bounds.getHeight() / 2;
     const int transportSectionHeight = bounds.getHeight() / 16;
-//    const int bottomSectionHeight = bounds.getHeight() / 4;
 
     // Top section: File name, Open button, Export button
     juce::FlexBox topSection;
     topSection.flexDirection = juce::FlexBox::Direction::row;
-    topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));  // File name label
-    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));  // Open button
-    topSection.items.add(juce::FlexItem(exportButton).withFlex(0.5f));  // Export button
+    topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));
+    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));
+    topSection.items.add(juce::FlexItem(exportButton).withFlex(0.5f));
     topSection.performLayout(bounds.removeFromTop(topSectionHeight));
 
     // Middle section: Waveform display
     juce::FlexBox middleSection;
     middleSection.flexDirection = juce::FlexBox::Direction::column;
-    middleSection.items.add(juce::FlexItem(waveformDisplay).withFlex(1.0f));  // Waveform display
+    middleSection.items.add(juce::FlexItem(waveformDisplay).withFlex(1.0f));
     middleSection.performLayout(bounds.removeFromTop(middleSectionHeight));
 
     // Transport controls
@@ -250,5 +234,132 @@ void MainComponent::stopButtonClicked()
     changeState(Stopping);
 }
 
+void MainComponent::exportButtonClicked()
+{
+    juce::FileChooser exportChooser("Save Processed Audio...", juce::File{}, "*.wav");
+
+    exportChooser.launchAsync(juce::FileBrowserComponent::saveMode, [this](const juce::FileChooser& fc)
+    {
+        auto file = fc.getResult();
+        if (file == juce::File{})
+            return;
+
+        // Create an output stream
+        std::unique_ptr<juce::FileOutputStream> outputStream(file.createOutputStream());
+
+        if (outputStream == nullptr)
+            return; // Handle error appropriately
+
+        // Set up an audio format writer
+        juce::AudioFormat* format = formatManager.findFormatForFileExtension(file.getFileExtension());
+
+        if (format == nullptr)
+            return; // Handle unsupported format
+
+        std::unique_ptr<juce::AudioFormatWriter> writer(format->createWriterFor(outputStream.get(),
+                                                                                  currentSampleRate, // Use stored sample rate
+                                                                                  2, // Number of channels
+                                                                                  16, // Bits per sample
+                                                                                  {}, // Metadata
+                                                                                  0)); // Quality
+
+        if (writer == nullptr)
+            return; // Handle writer creation failure
+
+        // Since the writer now owns the stream, release it from the unique_ptr
+        outputStream.release();
+
+        // Prepare a buffer to hold the entire audio
+        int totalSamples = static_cast<int>(transportSource.getLengthInSeconds() * currentSampleRate);
+        juce::AudioBuffer<float> bufferToWrite(2, totalSamples); // Assuming stereo
+
+        // Reset transport source to the beginning
+        transportSource.setPosition(0.0);
+
+        // Read the entire audio into bufferToWrite
+        int samplesRead = 0;
+        while (samplesRead < totalSamples)
+        {
+            int samplesToRead = std::min(totalSamples - samplesRead, (int)bufferToWrite.getNumSamples());
+            juce::AudioSourceChannelInfo info(&bufferToWrite, samplesRead, samplesToRead);
+            transportSource.getNextAudioBlock(info);
+            samplesRead += samplesToRead;
+        }
+
+        // Process the buffer
+        processorManager.processBlock(bufferToWrite);
+
+        // Write to file directly without manual conversion
+        writer->writeFromAudioSampleBuffer(bufferToWrite, 0, bufferToWrite.getNumSamples());
+    });
+}
+
+//void MainComponent::exportButtonClicked()
+//{
+//    juce::FileChooser exportChooser("Save Processed Audio...", juce::File{}, "*.wav");
+//
+//    exportChooser.launchAsync(juce::FileBrowserComponent::saveMode, [this](const juce::FileChooser& fc)
+//    {
+//        auto file = fc.getResult();
+//        if (file == juce::File{})
+//            return;
+//
+//        // Create an output stream
+//        std::unique_ptr<juce::FileOutputStream> outputStream(file.createOutputStream());
+//
+//        if (outputStream == nullptr)
+//            return; // Handle error appropriately
+//
+//        // Set up an audio format writer
+//        juce::AudioFormat* format = formatManager.findFormatForFileExtension(file.getFileExtension());
+//
+//        if (format == nullptr)
+//            return; // Handle unsupported format
+//
+//        std::unique_ptr<juce::AudioFormatWriter> writer(format->createWriterFor(outputStream.get(),
+//                                                                                  currentSampleRate, // Use stored sample rate
+//                                                                                  2, // Number of channels
+//                                                                                  16, // Bits per sample
+//                                                                                  {}, // Metadata
+//                                                                                  0)); // Quality
+//
+//        if (writer == nullptr)
+//            return; // Handle writer creation failure
+//
+//        // Since the writer now owns the stream, release it from the unique_ptr
+//        outputStream.release();
+//
+//        // Prepare a buffer to hold the entire audio
+//        int totalSamples = static_cast<int>(transportSource.getLengthInSeconds() * currentSampleRate);
+//        juce::AudioBuffer<float> bufferToWrite(2, totalSamples); // Assuming stereo
+//
+//        // Reset transport source to the beginning
+//        transportSource.setPosition(0.0);
+//
+//        // Read the entire audio into bufferToWrite
+//        juce::AudioSourceChannelInfo info(&bufferToWrite, 0, bufferToWrite.getNumSamples());
+//        transportSource.getNextAudioBlock(info);
+//
+//        // Process the buffer
+//        processorManager.processBlock(bufferToWrite);
+//
+//        // Convert float samples to 16-bit integers for WAV
+//        juce::AudioBuffer<int16_t> intBuffer;
+//        intBuffer.setSize(bufferToWrite.getNumChannels(), bufferToWrite.getNumSamples());
+//
+//        for (int channel = 0; channel < bufferToWrite.getNumChannels(); ++channel)
+//        {
+//            bufferToWrite.copyFrom(channel, 0, bufferToWrite, channel, 0, bufferToWrite.getNumSamples());
+//            bufferToWrite.applyGain(channel, 0, bufferToWrite.getNumSamples(), 32767.0f); // Scale to int16
+//            int16_t* dest = intBuffer.getWritePointer(channel);
+//            const float* src = bufferToWrite.getReadPointer(channel);
+//            for (int i = 0; i < bufferToWrite.getNumSamples(); ++i)
+//                dest[i] = static_cast<int16_t>(juce::jlimit<float>(-32768.0f, src[i], 32767.0f));
+//        }
+//
+//        // Write to file
+//        writer->writeFromAudioSampleBuffer(bufferToWrite, 0, bufferToWrite.getNumSamples());
+//    });
+//}
 
 

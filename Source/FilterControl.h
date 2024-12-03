@@ -27,6 +27,10 @@ public:
     juce::Slider gainSlider;
 
 private:
+    juce::Label frequencyLabel;
+    juce::Label qLabel;
+    juce::Label gainLabel;
+
     void resized() override;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FilterControl)

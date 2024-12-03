@@ -9,39 +9,67 @@
 */
 
 #include "Algorithms.h"
-#include <JuceHeader.h>
+#include <cmath>
 
 // Implement the Amplitude Threshold Algorithm
-void amplitudeThresholdAlgorithm(juce::AudioBuffer<float>& buffer)
+void amplitudeThresholdAlgorithm(juce::AudioBuffer<float>& buffer, std::vector<SibilantRegion>& detectedRegions)
 {
-    const float threshold = 0.2f; // Amplitude threshold
+    const float threshold = 0.3f; // Adjust as needed
     const int numChannels = buffer.getNumChannels();
     const int numSamples = buffer.getNumSamples();
 
+    // For simplicity, we'll consider a region as sibilant if any channel exceeds the threshold
+    std::vector<bool> aboveThreshold(numSamples, false);
+
     for (int channel = 0; channel < numChannels; ++channel)
     {
-        auto* channelData = buffer.getWritePointer(channel);
-
+        auto* channelData = buffer.getReadPointer(channel);
         for (int i = 0; i < numSamples; ++i)
         {
-            if (std::abs(channelData[i]) < threshold)
-                channelData[i] = 0.0f; // Zero-out values below the threshold
+            if (std::abs(channelData[i]) > threshold)
+                aboveThreshold[i] = true;
         }
+    }
+
+    // Identify contiguous regions above threshold
+    bool inRegion = false;
+    SibilantRegion currentRegion;
+
+    for (int i = 0; i < numSamples; ++i)
+    {
+        if (aboveThreshold[i] && !inRegion)
+        {
+            inRegion = true;
+            currentRegion.startSample = i;
+        }
+        else if (!aboveThreshold[i] && inRegion)
+        {
+            inRegion = false;
+            currentRegion.endSample = i;
+            detectedRegions.push_back(currentRegion);
+        }
+    }
+
+    // Handle case where the buffer ends while still in a region
+    if (inRegion)
+    {
+        currentRegion.endSample = numSamples - 1;
+        detectedRegions.push_back(currentRegion);
     }
 }
 
 // Implement the Spectral Analysis Algorithm
-void spectralAnalysisAlgorithm(juce::AudioBuffer<float>& buffer)
+void spectralAnalysisAlgorithm(juce::AudioBuffer<float>& buffer, std::vector<SibilantRegion>& detectedRegions)
 {
-    const int fftOrder = 10; // 2^10 = 1024
-    const int fftSize = 1 << fftOrder; // 1024
-    const float sampleRate = 44100.0f;
-    const float sibilantMinFreq = 5000.0f; // Lower range of sibilance
-    const float sibilantMaxFreq = 10000.0f; // Upper range of sibilance
-
-    juce::dsp::FFT fft(fftOrder);
-    juce::HeapBlock<juce::dsp::Complex<float>> fftBuffer(fftSize);
-
+//    const int fftOrder = 10; // 2^10 = 1024
+//    const int fftSize = 1 << fftOrder; // 1024
+//    const float sampleRate = 44100.0f;
+//    const float sibilantMinFreq = 5000.0f; // Lower range of sibilance
+//    const float sibilantMaxFreq = 10000.0f; // Upper range of sibilance
+//
+//    juce::dsp::FFT fft(fftOrder);
+//    juce::HeapBlock<juce::dsp::Complex<float>> fftBuffer(fftSize);
+//
 //    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
 //    {
 //        auto* channelData = buffer.getWritePointer(channel);

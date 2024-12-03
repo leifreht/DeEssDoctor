@@ -5,7 +5,6 @@
 #include "FilterControl.h"
 #include "WaveformDisplay.h"
 #include "PositionOverlay.h"
-//#include "MixerControl.h"
 #include "AudioProcessorManager.h"
 #include "Algorithms.h"
 
@@ -22,10 +21,9 @@ public:
     
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
-//    void paint(juce::Graphics& g) override;
-
-
 private:
+    double currentSampleRate = 44100.0;
+    
     enum TransportState
     {
         Stopped,
@@ -38,10 +36,12 @@ private:
     void openButtonClicked();
     void playButtonClicked();
     void stopButtonClicked();
+    void exportButtonClicked();
     
     juce::TextButton openButton;
     juce::TextButton playButton;
     juce::TextButton stopButton;
+    juce::TextButton exportButton;
     
     std::unique_ptr<juce::FileChooser> chooser;
 
@@ -54,21 +54,13 @@ private:
     PositionOverlay positionOverlay;
     
     juce::Label fileLabel;
-    juce::TextButton exportButton;
-    
-    //-------------------
-    
+        
     AlgorithmSelector algorithmSelector;
     FilterControl filterControl;
     
-//    MixerControl mixerControl;
-
     AudioProcessorManager processorManager;
-
-//    juce::TextButton loadButton;
-//    juce::File audioFile;
-//
-//    void loadAudioFile();
+    
+    std::vector<SibilantRegion> detectedSibilantRegions;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

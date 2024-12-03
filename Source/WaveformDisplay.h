@@ -11,16 +11,19 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Algorithms.h"
 
 class WaveformDisplay : public juce::Component,
                         private juce::ChangeListener
 {
 public:
     WaveformDisplay(int sourceSamplesPerWaveformSample,
-                             juce::AudioFormatManager& formatManager,
-                             juce::AudioThumbnailCache& cache);
+                   juce::AudioFormatManager& formatManager,
+                   juce::AudioThumbnailCache& cache);
 
     void setFile(const juce::File& file);
+    void setSibilantRegions(const std::vector<SibilantRegion>& regions); 
+    void setSampleRate(double rate);
     void paint(juce::Graphics& g) override;
 
 private:
@@ -30,25 +33,8 @@ private:
     void waveformChanged();
 
     juce::AudioThumbnail waveform;
-
+    std::vector<SibilantRegion> sibilantRegions; // Store regions
+    double sampleRate = 44100.0; 
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformDisplay)
-//public:
-//    WaveformDisplay();
-//    ~WaveformDisplay() override = default;
-//
-//    void loadFile(const juce::File& audioFile);
-//    void paint(juce::Graphics& g) override;
-//    void resized() override;
-//
-//private:
-//    juce::AudioFormatManager formatManager;
-//    juce::AudioThumbnailCache thumbnailCache;
-//    juce::AudioThumbnail thumbnail;
-//
-//    void changeListenerCallback(juce::ChangeBroadcaster* source) override
-//    {
-//        repaint();
-//    }
-//
-//    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WaveformDisplay)
 };
