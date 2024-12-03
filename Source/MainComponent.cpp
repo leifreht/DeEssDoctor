@@ -128,10 +128,10 @@ void MainComponent::resized()
     auto bounds = getLocalBounds();
     
     // Define height proportions
-    const int topSectionHeight = bounds.getHeight() / 8;  // 1/8 for the top section
-    const int middleSectionHeight = bounds.getHeight() / 2;  // 1/2 for the middle section
-    const int transportSectionHeight = bounds.getHeight() / 8;  // 1/8 for transport controls
-    const int bottomSectionHeight = bounds.getHeight() / 4;  // 1/4 for the bottom section
+    const int topSectionHeight = bounds.getHeight() / 16;
+    const int middleSectionHeight = bounds.getHeight() / 2;
+    const int transportSectionHeight = bounds.getHeight() / 16;
+//    const int bottomSectionHeight = bounds.getHeight() / 4;
 
     // Top section: File name, Open button, Export button
     juce::FlexBox topSection;
