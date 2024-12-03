@@ -6,7 +6,7 @@ class DeEssDoctorApplication : public juce::JUCEApplication
 public:
     DeEssDoctorApplication() = default;
     
-    const juce::String getApplicationName() override       { return "DeEssDoctorApplication"; }
+    const juce::String getApplicationName() override       { return "DeEssDoctor"; }
     const juce::String getApplicationVersion() override    { return "1.0.0"; }
 
     void initialise (const juce::String&) override

@@ -27,6 +27,19 @@ waveformDisplay(512, formatManager, waveformCache),
     
     addAndMakeVisible(algorithmSelector);
     addAndMakeVisible(filterControl);
+    
+    fileLabel.setText("No File Loaded", juce::dontSendNotification);
+    fileLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(fileLabel);
+    
+    // In the constructor
+    exportButton.setButtonText("Export...");
+    addAndMakeVisible(exportButton);
+    exportButton.onClick = [this]()
+    {
+        // Implement export functionality here
+    };
+    
 //    addAndMakeVisible(waveformDisplay);
 //    addAndMakeVisible(mixerControl);
 //    addAndMakeVisible(loadButton);
@@ -57,7 +70,7 @@ waveformDisplay(512, formatManager, waveformCache),
 //        processorManager.setMixLevel(mixerControl.getMixLevel());
 //    };
 
-    setSize(800, 600);
+    setSize(1200, 800);
     
     formatManager.registerBasicFormats();
     transportSource.addChangeListener(this);
@@ -73,9 +86,6 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
-//    processorManager.prepare(sampleRate, samplesPerBlockExpected, 2);
-//    processorManager.prepare(sampleRate, samplesPerBlockExpected, getMainBusNumInputChannels());
-//    processorManager.prepare(sampleRate, samplesPerBlockExpected, getTotalNumInputChannels());
 }
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
@@ -86,66 +96,72 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
         transportSource.getNextAudioBlock(bufferToFill);
 }
 
-//void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
-//{
-//    // Clear the buffer initially
-//    bufferToFill.clearActiveBufferRegion();
-//
-//    // Forward the audio buffer to processorManager
-//    juce::AudioBuffer<float> buffer(bufferToFill.buffer->getArrayOfWritePointers(), bufferToFill.buffer->getNumChannels(), bufferToFill.startSample, bufferToFill.numSamples);
-//    processorManager.processBlock(buffer);
-//
-//    // Copy processed data back to the bufferToFill
-//    bufferToFill.buffer->copyFrom(0, bufferToFill.startSample, buffer, 0, 0, buffer.getNumSamples());
-//}
-
 void MainComponent::releaseResources()
 {
     transportSource.releaseResources();
 }
 
-//void MainComponent::paint(juce::Graphics& g)
+//void MainComponent::resized()
 //{
-//    g.fillAll(juce::Colours::darkgrey); // Background color
+//    // set bounds is x, y, w and h
+//    
+////    auto area = getLocalBounds();
+////    auto controlHeight = 50;
+//    openButton.setBounds(getWidth() - (getWidth() / 4), 10, getWidth() / 4, 20);
+//    playButton.setBounds(10, 40, getWidth() - 20, 20);
+//    stopButton.setBounds(10, 70, getWidth() - 20, 20);
+//
+//    juce::Rectangle<int> displayBounds(10, 100, getWidth() - 20, getHeight() - 120);
+//    waveformDisplay.setBounds(displayBounds);
+//    positionOverlay.setBounds(displayBounds);
+//    
+//
+////    algorithmSelector.setBounds(area.removeFromTop(controlHeight));
+////    filterControl.setBounds(area.removeFromTop(controlHeight));
+////    loadButton.setBounds(area.removeFromTop(controlHeight));
+////    mixerControl.setBounds(area.removeFromTop(controlHeight));
+////    waveformDisplay.setBounds(area);
 //}
 
 void MainComponent::resized()
 {
-//    auto area = getLocalBounds();
-//    auto controlHeight = 50;
-    openButton.setBounds(10, 10, getWidth() - 20, 20);
-    playButton.setBounds(10, 40, getWidth() - 20, 20);
-    stopButton.setBounds(10, 70, getWidth() - 20, 20);
-
-    juce::Rectangle<int> displayBounds(10, 100, getWidth() - 20, getHeight() - 120);
-    waveformDisplay.setBounds(displayBounds);
-    positionOverlay.setBounds(displayBounds);
+    auto bounds = getLocalBounds();
     
+    // Define height proportions
+    const int topSectionHeight = bounds.getHeight() / 8;  // 1/8 for the top section
+    const int middleSectionHeight = bounds.getHeight() / 2;  // 1/2 for the middle section
+    const int transportSectionHeight = bounds.getHeight() / 8;  // 1/8 for transport controls
+    const int bottomSectionHeight = bounds.getHeight() / 4;  // 1/4 for the bottom section
 
-//    algorithmSelector.setBounds(area.removeFromTop(controlHeight));
-//    filterControl.setBounds(area.removeFromTop(controlHeight));
-//    loadButton.setBounds(area.removeFromTop(controlHeight));
-//    mixerControl.setBounds(area.removeFromTop(controlHeight));
-//    waveformDisplay.setBounds(area);
+    // Top section: File name, Open button, Export button
+    juce::FlexBox topSection;
+    topSection.flexDirection = juce::FlexBox::Direction::row;
+    topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));  // File name label
+    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));  // Open button
+    topSection.items.add(juce::FlexItem(exportButton).withFlex(0.5f));  // Export button
+    topSection.performLayout(bounds.removeFromTop(topSectionHeight));
+
+    // Middle section: Waveform display
+    juce::FlexBox middleSection;
+    middleSection.flexDirection = juce::FlexBox::Direction::column;
+    middleSection.items.add(juce::FlexItem(waveformDisplay).withFlex(1.0f));  // Waveform display
+    middleSection.performLayout(bounds.removeFromTop(middleSectionHeight));
+
+    // Transport controls
+    juce::FlexBox transportSection;
+    transportSection.flexDirection = juce::FlexBox::Direction::row;
+    transportSection.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
+    transportSection.items.add(juce::FlexItem(playButton).withFlex(1.0f));  // Play button
+    transportSection.items.add(juce::FlexItem(stopButton).withFlex(1.0f));  // Stop button
+    transportSection.performLayout(bounds.removeFromTop(transportSectionHeight));
+
+    // Bottom section: Filter controls and algorithm selector
+    juce::FlexBox bottomSection;
+    bottomSection.flexDirection = juce::FlexBox::Direction::column;
+    bottomSection.items.add(juce::FlexItem(filterControl).withFlex(1.0f));  // Filter controls
+    bottomSection.items.add(juce::FlexItem(algorithmSelector).withFlex(1.0f));  // Algorithm selector
+    bottomSection.performLayout(bounds);
 }
-
-//void MainComponent::loadAudioFile()
-//{
-//    auto chooser = std::make_unique<juce::FileChooser>(
-//        "Select an audio file...", juce::File(), "*.wav;*.mp3;*.aiff");
-//
-//    chooser->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
-//        [this](const juce::FileChooser& fc)
-//        {
-//            auto result = fc.getResult();
-//
-//            if (result.existsAsFile())
-//            {
-//                audioFile = result;
-//                waveformDisplay.loadFile(audioFile);
-//            }
-//        });
-//}
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
@@ -210,6 +226,7 @@ void MainComponent::openButtonClicked()
         if (file != juce::File{})
         {
             auto* reader = formatManager.createReaderFor (file);
+            fileLabel.setText(file.getFileName(), juce::dontSendNotification);
 
             if (reader != nullptr)
             {

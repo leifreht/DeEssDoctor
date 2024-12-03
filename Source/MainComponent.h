@@ -53,6 +53,9 @@ private:
     WaveformDisplay waveformDisplay;
     PositionOverlay positionOverlay;
     
+    juce::Label fileLabel;
+    juce::TextButton exportButton;
+    
     //-------------------
     
     AlgorithmSelector algorithmSelector;
