@@ -14,14 +14,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
-#include "SibilantRegion.h"
-
-//// Struct to hold detected sibilant regions
-//struct SibilantRegion
-//{
-//    int startSample;
-//    int endSample;
-//};
+#include "SibilantRegion.h" // Ensure this is included
 
 class AudioProcessorManager
 {
@@ -41,10 +34,12 @@ public:
 
 private:
     std::function<void(juce::AudioBuffer<float>&, std::vector<SibilantRegion>&)> currentAlgorithm; // S-detection algorithm
-    juce::dsp::IIR::Filter<float> highPassFilter;                         // High-pass filter for sibilant isolation
-    juce::dsp::IIR::Coefficients<float>::Ptr highPassCoefficients;       // High-pass filter coefficients
 
-    // Processing chain for sibilants
+    // Single high-pass filter for mono
+    juce::dsp::IIR::Filter<float> highPassFilter;
+    juce::dsp::IIR::Coefficients<float>::Ptr highPassCoefficients;
+
+    // Single high-shelf filter for processing sibilants
     juce::dsp::IIR::Filter<float> highShelfFilter;
     juce::dsp::IIR::Coefficients<float>::Ptr highShelfCoefficients;
 

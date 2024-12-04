@@ -12,6 +12,7 @@
 
 #include <JuceHeader.h>
 #include "Algorithms.h"
+#include "SibilantRegion.h"
 
 class WaveformDisplay : public juce::Component,
                         private juce::ChangeListener
