@@ -61,14 +61,8 @@ private:
     AlgorithmSelector algorithmSelector;
     FilterControl filterControl;
     
-//    MixerControl mixerControl;
-
     AudioProcessorManager processorManager;
 
-//    juce::TextButton loadButton;
-//    juce::File audioFile;
-//
-//    void loadAudioFile();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

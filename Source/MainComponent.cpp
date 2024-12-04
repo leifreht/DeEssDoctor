@@ -90,6 +90,7 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
+//    transportSource.getNextAudioBlock(bufferToFill);
     if (readerSource.get() == nullptr)
         bufferToFill.clearActiveBufferRegion();
     else
@@ -141,11 +142,10 @@ void MainComponent::resized()
     topSection.items.add(juce::FlexItem(exportButton).withFlex(0.5f));  // Export button
     topSection.performLayout(bounds.removeFromTop(topSectionHeight));
 
-    // Middle section: Waveform display
-    juce::FlexBox middleSection;
-    middleSection.flexDirection = juce::FlexBox::Direction::column;
-    middleSection.items.add(juce::FlexItem(waveformDisplay).withFlex(1.0f));  // Waveform display
-    middleSection.performLayout(bounds.removeFromTop(middleSectionHeight));
+    // Middle section layout: Waveform + Overlay
+    auto middleSectionBounds = bounds.removeFromTop(middleSectionHeight);
+    waveformDisplay.setBounds(middleSectionBounds);
+    positionOverlay.setBounds(middleSectionBounds);
 
     // Transport controls
     juce::FlexBox transportSection;
