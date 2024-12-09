@@ -59,8 +59,8 @@ private:
     FilterControl filterControl;
     
     AudioProcessorManager processorManager;
-    
-    std::vector<SibilantRegion> detectedSibilantRegions;
+
+    // std::vector<SibilantRegion> detectedSibilantRegions;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

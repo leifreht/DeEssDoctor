@@ -50,3 +50,4 @@ private:
     void applyHighPassFilter(juce::AudioBuffer<float>& buffer);
     void applyHighShelfFilter(juce::AudioBuffer<float>& buffer);
 };
+ 
