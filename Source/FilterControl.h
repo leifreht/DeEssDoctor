@@ -6,7 +6,7 @@
     Author:  Leif Rehtanz
 
   ==============================================================================
-*/
+ */
 
 #pragma once
 
@@ -21,10 +21,12 @@ public:
     float getFrequency() const;
     float getThreshold() const;
     float getReduction() const;
+    float getHysteresis() const;
 
     juce::Slider frequencySlider;
     juce::Slider thresholdSlider;
     juce::Slider reductionSlider;
+    juce::Slider hysteresisSlider;
 
 private:
     void resized() override;

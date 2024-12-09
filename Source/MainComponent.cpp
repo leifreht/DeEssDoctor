@@ -33,23 +33,13 @@ waveformDisplay(512, formatManager, waveformCache),
     addAndMakeVisible(fileLabel);
         
 
-//    filterControl.frequencySlider.onValueChange = [this]()
-//    {
-//        processorManager.setDeEssingParameters(
-//            filterControl.thresholdSlider.getValue(),
-//            filterControl.reductionSlider.getValue(),
-//            filterControl.frequencySlider.getValue());
-//    };
-//
-//    filterControl.thresholdSlider.onValueChange = filterControl.frequencySlider.onValueChange;
-//    filterControl.reductionSlider.onValueChange = filterControl.frequencySlider.onValueChange;
-    
     filterControl.frequencySlider.onValueChange = [this]()
     {
         processorManager.setDeEssingParameters(
             filterControl.thresholdSlider.getValue(),
             filterControl.reductionSlider.getValue(),
-            filterControl.frequencySlider.getValue()
+            filterControl.frequencySlider.getValue(),
+            filterControl.hysteresisSlider.getValue()
         );
 
         DBG("Frequency Slider Changed: " << filterControl.frequencySlider.getValue() << " Hz");
@@ -60,7 +50,8 @@ waveformDisplay(512, formatManager, waveformCache),
         processorManager.setDeEssingParameters(
             filterControl.thresholdSlider.getValue(),
             filterControl.reductionSlider.getValue(),
-            filterControl.frequencySlider.getValue()
+            filterControl.frequencySlider.getValue(),
+            filterControl.hysteresisSlider.getValue()
         );
 
         DBG("Threshold Slider Changed: " << filterControl.thresholdSlider.getValue() << " dB");
@@ -71,10 +62,22 @@ waveformDisplay(512, formatManager, waveformCache),
         processorManager.setDeEssingParameters(
             filterControl.thresholdSlider.getValue(),
             filterControl.reductionSlider.getValue(),
-            filterControl.frequencySlider.getValue()
+            filterControl.frequencySlider.getValue(),
+            filterControl.hysteresisSlider.getValue()
         );
 
         DBG("Reduction Slider Changed: " << filterControl.reductionSlider.getValue() << " dB");
+    };
+    
+    filterControl.hysteresisSlider.onValueChange = [this]()
+    {
+        processorManager.setDeEssingParameters(
+            filterControl.thresholdSlider.getValue(),
+            filterControl.reductionSlider.getValue(),
+            filterControl.frequencySlider.getValue(),
+            filterControl.hysteresisSlider.getValue()
+        );
+        DBG("Hysteresis Slider Changed: " << filterControl.hysteresisSlider.getValue() << " dB");
     };
 
     setSize(1200, 800);
