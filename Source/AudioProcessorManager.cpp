@@ -44,19 +44,21 @@ void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
     juce::dsp::AudioBlock<float> block(highPassedBuffer);
     juce::dsp::ProcessContextReplacing<float> context(block);
     highPassFilter.process(context);
+    
+    buffer.clear();
 
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
-        auto* originalData = buffer.getWritePointer(channel);
+//        auto* originalData = buffer.getWritePointer(channel);
         auto* highPassedData = highPassedBuffer.getWritePointer(channel);
+        auto* outputData = buffer.getWritePointer(channel);
 
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            if (std::abs(highPassedData[sample]) > threshold)
+            if (std::abs(highPassedData[sample]) > juce::Decibels::decibelsToGain(threshold))
             {
-//                DBG("Sibilant detected at channel " << channel << ", sample " << sample
-//                                    << ", value: " << highPassedData[sample]); 
-                originalData[sample] -= reduction * highPassedData[sample];
+//                originalData[sample] -= reduction * highPassedData[sample];
+                outputData[sample] = highPassedData[sample];
             }
         }
     }
