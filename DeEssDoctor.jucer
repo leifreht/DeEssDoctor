@@ -6,15 +6,10 @@
     <GROUP id="{2F9C6D1C-68A0-6BEF-0B72-14446FC68313}" name="Source">
       <FILE id="QGXoTd" name="Algorithms.cpp" compile="1" resource="0" file="Source/Algorithms.cpp"/>
       <FILE id="QJNeWf" name="Algorithms.h" compile="0" resource="0" file="Source/Algorithms.h"/>
-      <FILE id="h4ismK" name="Utility.cpp" compile="1" resource="0" file="Source/Utility.cpp"/>
-      <FILE id="OraPA0" name="Utility.h" compile="0" resource="0" file="Source/Utility.h"/>
       <FILE id="GIlL3l" name="SpectrumOverlay.cpp" compile="1" resource="0"
             file="Source/SpectrumOverlay.cpp"/>
       <FILE id="biL8KY" name="SpectrumOverlay.h" compile="0" resource="0"
             file="Source/SpectrumOverlay.h"/>
-      <FILE id="R32iv2" name="MixerControl.cpp" compile="1" resource="0"
-            file="Source/MixerControl.cpp"/>
-      <FILE id="KuCkIt" name="MixerControl.h" compile="0" resource="0" file="Source/MixerControl.h"/>
       <FILE id="tPtLuy" name="WaveformDisplay.cpp" compile="1" resource="0"
             file="Source/WaveformDisplay.cpp"/>
       <FILE id="CShLlR" name="WaveformDisplay.h" compile="0" resource="0"

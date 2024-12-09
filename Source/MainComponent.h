@@ -54,9 +54,6 @@ private:
     PositionOverlay positionOverlay;
     
     juce::Label fileLabel;
-    juce::TextButton exportButton;
-    
-    //-------------------
     
     AlgorithmSelector algorithmSelector;
     FilterControl filterControl;

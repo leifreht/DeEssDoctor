@@ -31,44 +31,18 @@ waveformDisplay(512, formatManager, waveformCache),
     fileLabel.setText("No File Loaded", juce::dontSendNotification);
     fileLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(fileLabel);
-    
-    // In the constructor
-    exportButton.setButtonText("Export...");
-    addAndMakeVisible(exportButton);
-    exportButton.onClick = [this]()
-    {
-        // Implement export functionality here
-    };
-    
-//    addAndMakeVisible(waveformDisplay);
-//    addAndMakeVisible(mixerControl);
-//    addAndMakeVisible(loadButton);
+        
 
-//    loadButton.setButtonText("Load Audio File");
-//    loadButton.onClick = [this]() { loadAudioFile(); };
-
-    // Connect the algorithm selector to the processor manager
-    algorithmSelector.algorithmChanged = [this]()
-    {
-        auto selectedAlgorithm = algorithmSelector.getSelectedAlgorithm();
-
-        if (selectedAlgorithm == "Amplitude Threshold")
-            processorManager.setAlgorithm(amplitudeThresholdAlgorithm);
-        else if (selectedAlgorithm == "Spectral Analysis")
-            processorManager.setAlgorithm(spectralAnalysisAlgorithm);
-    };
-
-    // Connect filter controls to processor manager
     filterControl.frequencySlider.onValueChange = [this]()
     {
-        processorManager.setFilterParameters(filterControl.getFrequency(), filterControl.getQFactor(), filterControl.getGain());
+        processorManager.setDeEssingParameters(
+            filterControl.thresholdSlider.getValue(),
+            filterControl.reductionSlider.getValue(),
+            filterControl.frequencySlider.getValue());
     };
 
-//    // Connect mixer control to processor manager
-//    mixerControl.mixSlider.onValueChange = [this]()
-//    {
-//        processorManager.setMixLevel(mixerControl.getMixLevel());
-//    };
+    filterControl.thresholdSlider.onValueChange = filterControl.frequencySlider.onValueChange;
+    filterControl.reductionSlider.onValueChange = filterControl.frequencySlider.onValueChange;
 
     setSize(1200, 800);
     
@@ -102,27 +76,6 @@ void MainComponent::releaseResources()
     transportSource.releaseResources();
 }
 
-//void MainComponent::resized()
-//{
-//    // set bounds is x, y, w and h
-//    
-////    auto area = getLocalBounds();
-////    auto controlHeight = 50;
-//    openButton.setBounds(getWidth() - (getWidth() / 4), 10, getWidth() / 4, 20);
-//    playButton.setBounds(10, 40, getWidth() - 20, 20);
-//    stopButton.setBounds(10, 70, getWidth() - 20, 20);
-//
-//    juce::Rectangle<int> displayBounds(10, 100, getWidth() - 20, getHeight() - 120);
-//    waveformDisplay.setBounds(displayBounds);
-//    positionOverlay.setBounds(displayBounds);
-//    
-//
-////    algorithmSelector.setBounds(area.removeFromTop(controlHeight));
-////    filterControl.setBounds(area.removeFromTop(controlHeight));
-////    loadButton.setBounds(area.removeFromTop(controlHeight));
-////    mixerControl.setBounds(area.removeFromTop(controlHeight));
-////    waveformDisplay.setBounds(area);
-//}
 
 void MainComponent::resized()
 {
@@ -137,9 +90,8 @@ void MainComponent::resized()
     // Top section: File name, Open button, Export button
     juce::FlexBox topSection;
     topSection.flexDirection = juce::FlexBox::Direction::row;
-    topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));  // File name label
-    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));  // Open button
-    topSection.items.add(juce::FlexItem(exportButton).withFlex(0.5f));  // Export button
+    topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));
+    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));
     topSection.performLayout(bounds.removeFromTop(topSectionHeight));
 
     // Middle section layout: Waveform + Overlay
@@ -151,8 +103,8 @@ void MainComponent::resized()
     juce::FlexBox transportSection;
     transportSection.flexDirection = juce::FlexBox::Direction::row;
     transportSection.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
-    transportSection.items.add(juce::FlexItem(playButton).withFlex(1.0f));  // Play button
-    transportSection.items.add(juce::FlexItem(stopButton).withFlex(1.0f));  // Stop button
+    transportSection.items.add(juce::FlexItem(playButton).withFlex(1.0f));
+    transportSection.items.add(juce::FlexItem(stopButton).withFlex(1.0f));
     transportSection.performLayout(bounds.removeFromTop(transportSectionHeight));
 
     // Bottom section: Filter controls and algorithm selector

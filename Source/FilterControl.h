@@ -19,12 +19,12 @@ public:
     ~FilterControl() override = default;
 
     float getFrequency() const;
-    float getQFactor() const;
-    float getGain() const;
+    float getThreshold() const;
+    float getReduction() const;
 
     juce::Slider frequencySlider;
-    juce::Slider qSlider;
-    juce::Slider gainSlider;
+    juce::Slider thresholdSlider;
+    juce::Slider reductionSlider;
 
 private:
     void resized() override;
