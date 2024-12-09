@@ -24,10 +24,11 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer);
 
 private:
-    std::function<void(juce::AudioBuffer<float>&)> deEssingAlgorithm;
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
-    float threshold { 0.2f };
-    float reduction { 0.5f };
+    juce::dsp::LinkwitzRileyFilter<float> allPassFilter;
+    
+    float threshold { -20.0f };
+    float mixLevel { 0.0f };
     float frequency { 4000.0f };
 
     void applyDeEssing(juce::AudioBuffer<float>& buffer);

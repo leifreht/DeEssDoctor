@@ -25,8 +25,8 @@ FilterControl::FilterControl()
     thresholdSlider.setTextValueSuffix(" dB");
 
     addAndMakeVisible(reductionSlider);
-    reductionSlider.setRange(0.0, 24.0, 0.1);
-    reductionSlider.setValue(6.0);
+    reductionSlider.setRange(-60.0, 6.0, 0.1);
+    reductionSlider.setValue(0.0);
     reductionSlider.setTextValueSuffix(" dB");
 }
 
