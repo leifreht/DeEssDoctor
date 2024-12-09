@@ -54,6 +54,8 @@ void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
         {
             if (std::abs(highPassedData[sample]) > threshold)
             {
+//                DBG("Sibilant detected at channel " << channel << ", sample " << sample
+//                                    << ", value: " << highPassedData[sample]); 
                 originalData[sample] -= reduction * highPassedData[sample];
             }
         }

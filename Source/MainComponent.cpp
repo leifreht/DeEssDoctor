@@ -33,16 +33,49 @@ waveformDisplay(512, formatManager, waveformCache),
     addAndMakeVisible(fileLabel);
         
 
+//    filterControl.frequencySlider.onValueChange = [this]()
+//    {
+//        processorManager.setDeEssingParameters(
+//            filterControl.thresholdSlider.getValue(),
+//            filterControl.reductionSlider.getValue(),
+//            filterControl.frequencySlider.getValue());
+//    };
+//
+//    filterControl.thresholdSlider.onValueChange = filterControl.frequencySlider.onValueChange;
+//    filterControl.reductionSlider.onValueChange = filterControl.frequencySlider.onValueChange;
+    
     filterControl.frequencySlider.onValueChange = [this]()
     {
         processorManager.setDeEssingParameters(
             filterControl.thresholdSlider.getValue(),
             filterControl.reductionSlider.getValue(),
-            filterControl.frequencySlider.getValue());
+            filterControl.frequencySlider.getValue()
+        );
+
+        DBG("Frequency Slider Changed: " << filterControl.frequencySlider.getValue() << " Hz");
     };
 
-    filterControl.thresholdSlider.onValueChange = filterControl.frequencySlider.onValueChange;
-    filterControl.reductionSlider.onValueChange = filterControl.frequencySlider.onValueChange;
+    filterControl.thresholdSlider.onValueChange = [this]()
+    {
+        processorManager.setDeEssingParameters(
+            filterControl.thresholdSlider.getValue(),
+            filterControl.reductionSlider.getValue(),
+            filterControl.frequencySlider.getValue()
+        );
+
+        DBG("Threshold Slider Changed: " << filterControl.thresholdSlider.getValue() << " dB");
+    };
+
+    filterControl.reductionSlider.onValueChange = [this]()
+    {
+        processorManager.setDeEssingParameters(
+            filterControl.thresholdSlider.getValue(),
+            filterControl.reductionSlider.getValue(),
+            filterControl.frequencySlider.getValue()
+        );
+
+        DBG("Reduction Slider Changed: " << filterControl.reductionSlider.getValue() << " dB");
+    };
 
     setSize(1200, 800);
     
@@ -60,15 +93,25 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+    int numChannels = deviceManager.getCurrentAudioDevice()->getActiveInputChannels().countNumberOfSetBits();
+
+    processorManager.prepare(sampleRate, samplesPerBlockExpected, numChannels);
+    DBG("ProcessorManager prepared with sample rate: " << sampleRate
+            << ", block size: " << samplesPerBlockExpected
+            << ", num channels: " << numChannels);
 }
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-//    transportSource.getNextAudioBlock(bufferToFill);
     if (readerSource.get() == nullptr)
+    {
         bufferToFill.clearActiveBufferRegion();
+    }
     else
+    {
         transportSource.getNextAudioBlock(bufferToFill);
+        processorManager.processBlock(*bufferToFill.buffer);
+    }
 }
 
 void MainComponent::releaseResources()

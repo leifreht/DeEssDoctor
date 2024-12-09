@@ -16,7 +16,7 @@ FilterControl::FilterControl()
 {
     addAndMakeVisible(frequencySlider);
     frequencySlider.setRange(2000.0, 20000.0, 10.0);
-    frequencySlider.setValue(6000.0);
+    frequencySlider.setValue(4000.0);
     frequencySlider.setTextValueSuffix(" Hz");
 
     addAndMakeVisible(thresholdSlider);
