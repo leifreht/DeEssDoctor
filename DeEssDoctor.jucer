@@ -35,6 +35,8 @@
       <FILE id="dMKGZQ" name="AudioProcessorManager.cpp" compile="1" resource="0"
             file="Source/AudioProcessorManager.cpp"/>
       <FILE id="KMrMB8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="EO0IVZ" name="SibilantRegion.h" compile="0" resource="0"
+            file="Source/SibilantRegion.h"/>
       <FILE id="GixoiF" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="GsDCpY" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>

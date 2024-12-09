@@ -12,30 +12,44 @@
 
 FilterControl::FilterControl()
 {
+    // Frequency Slider
     addAndMakeVisible(frequencySlider);
-    addAndMakeVisible(qSlider);
-    addAndMakeVisible(gainSlider);
-
-    frequencySlider.setRange(20.0, 20000.0);
-    frequencySlider.setValue(1000.0);
+    frequencySlider.setRange(1000.0, 10000.0, 1.0); // Suitable range for high-shelf
+    frequencySlider.setValue(5000.0);
     frequencySlider.setTextValueSuffix(" Hz");
     frequencySlider.setSliderStyle(juce::Slider::LinearHorizontal);
     frequencySlider.setPopupDisplayEnabled(true, false, this);
-    frequencySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    frequencySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 80, 20);
 
-    qSlider.setRange(0.1, 10.0);
+    frequencyLabel.setText("Frequency", juce::dontSendNotification);
+    addAndMakeVisible(frequencyLabel);
+    frequencyLabel.attachToComponent(&frequencySlider, true);
+
+    // Q Factor Slider
+    addAndMakeVisible(qSlider);
+    qSlider.setRange(0.1, 10.0, 0.1);
     qSlider.setValue(1.0);
     qSlider.setTextValueSuffix(" Q");
     qSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     qSlider.setPopupDisplayEnabled(true, false, this);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    qSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 80, 20);
 
-    gainSlider.setRange(-24.0, 24.0);
+    qLabel.setText("Q Factor", juce::dontSendNotification);
+    addAndMakeVisible(qLabel);
+    qLabel.attachToComponent(&qSlider, true);
+
+    // Gain Slider
+    addAndMakeVisible(gainSlider);
+    gainSlider.setRange(-12.0, 12.0, 0.1); // Gain in dB
     gainSlider.setValue(0.0);
     gainSlider.setTextValueSuffix(" dB");
     gainSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     gainSlider.setPopupDisplayEnabled(true, false, this);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    gainSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 80, 20);
+
+    gainLabel.setText("Gain", juce::dontSendNotification);
+    addAndMakeVisible(gainLabel);
+    gainLabel.attachToComponent(&gainSlider, true);
 }
 
 float FilterControl::getFrequency() const { return frequencySlider.getValue(); }

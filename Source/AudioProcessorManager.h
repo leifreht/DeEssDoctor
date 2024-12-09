@@ -13,6 +13,8 @@
 #include <JuceHeader.h>
 #include <memory>
 #include <functional>
+#include <vector>
+#include "SibilantRegion.h" // Ensure this is included
 
 class AudioProcessorManager
 {
@@ -21,19 +23,31 @@ public:
     ~AudioProcessorManager() = default;
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
-    void setAlgorithm(std::function<void(juce::AudioBuffer<float>&)> newAlgorithm);
+    void setAlgorithm(std::function<void(juce::AudioBuffer<float>&, std::vector<SibilantRegion>&)> newAlgorithm);
     void setFilterParameters(float frequency, float q, float gain);
     void setMixLevel(float mixLevel);
 
     void processBlock(juce::AudioBuffer<float>& buffer);
 
+    // Get detected sibilant regions for visualization
+    const std::vector<SibilantRegion>& getSibilantRegions() const { return sibilantRegions; }
+
 private:
-    std::function<void(juce::AudioBuffer<float>&)> currentAlgorithm; // Active S-detection algorithm
-    juce::dsp::IIR::Filter<float> iirFilter;                         // Filter for processing
-    juce::dsp::IIR::Coefficients<float>::Ptr filterCoefficients;     // Filter coefficients
+    std::function<void(juce::AudioBuffer<float>&, std::vector<SibilantRegion>&)> currentAlgorithm; // S-detection algorithm
+
+    // Single high-pass filter for mono
+    juce::dsp::IIR::Filter<float> highPassFilter;
+    juce::dsp::IIR::Coefficients<float>::Ptr highPassCoefficients;
+
+    // Single high-shelf filter for processing sibilants
+    juce::dsp::IIR::Filter<float> highShelfFilter;
+    juce::dsp::IIR::Coefficients<float>::Ptr highShelfCoefficients;
 
     float mixLevel; // 0.0 (original) to 1.0 (processed)
 
-    void applyFilter(juce::AudioBuffer<float>& buffer);
+    std::vector<SibilantRegion> sibilantRegions; // Detected sibilant regions
+
+    void applyHighPassFilter(juce::AudioBuffer<float>& buffer);
+    void applyHighShelfFilter(juce::AudioBuffer<float>& buffer);
 };
  
