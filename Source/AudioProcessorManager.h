@@ -22,6 +22,8 @@ public:
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
     void setDeEssingParameters(float newThreshold, float newReduction, float newFrequency, float newHysteresis);
     void processBlock(juce::AudioBuffer<float>& buffer);
+    
+    void getSibilantBuffer(juce::AudioBuffer<float>& buffer) const;
 
 private:
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
@@ -34,5 +36,7 @@ private:
     std::vector<int> hysteresisCounters;
 
     void applyDeEssing(juce::AudioBuffer<float>& buffer);
+    
+    juce::AudioBuffer<float> lastSibilantBuffer; 
 };
  

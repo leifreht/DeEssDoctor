@@ -23,7 +23,12 @@ class WaveformDisplay : public juce::Component,
     void setFile(const juce::File& file);
     void paint(juce::Graphics& g) override;
     
+    void setSibilantBuffer(const juce::AudioBuffer<float>& buffer);
+    
     private:
+    juce::AudioBuffer<float> sibilantBuffer;
+    bool hasSibilantData = false;
+    
     void paintIfNoFileLoaded(juce::Graphics& g);
     void paintIfFileLoaded(juce::Graphics& g);
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;

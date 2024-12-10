@@ -117,11 +117,18 @@ void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
         
         auto* finalData = buffer.getWritePointer(channel);
         
+        lastSibilantBuffer.makeCopyOf(sibilantBuffer);
+        
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
             finalData[sample] = originalData[sample]; // Copy original data
             finalData[sample] += gainFactor * sibilantData[sample]; // Mix sibilants back
         }
     }
+}
+
+void AudioProcessorManager::getSibilantBuffer(juce::AudioBuffer<float>& buffer) const
+{
+    buffer.makeCopyOf(lastSibilantBuffer); 
 }
 

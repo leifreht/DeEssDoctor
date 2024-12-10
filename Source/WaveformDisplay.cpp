@@ -23,6 +23,18 @@ void WaveformDisplay::setFile(const juce::File& file)
     waveform.setSource(new juce::FileInputSource(file));
 }
 
+void WaveformDisplay::setSibilantBuffer(const juce::AudioBuffer<float>& buffer)
+{
+    sibilantBuffer.makeCopyOf(buffer);
+    hasSibilantData = true;
+
+    // Schedule repaint on the message thread
+    juce::MessageManager::callAsync([this]()
+    {
+        repaint();
+    });
+}
+
 void WaveformDisplay::paint(juce::Graphics& g)
 {
     if (waveform.getNumChannels() == 0)
@@ -38,11 +50,43 @@ void WaveformDisplay::paintIfNoFileLoaded(juce::Graphics& g)
     g.drawFittedText("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
 }
 
+//void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
+//{
+//    g.fillAll(juce::Colours::white);
+//    g.setColour(juce::Colours::blue);
+//    waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+//}
+
 void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
+
+    // Draw the original waveform in blue
     g.setColour(juce::Colours::blue);
     waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+
+    // Draw the sibilants in red, if available
+    if (hasSibilantData && sibilantBuffer.getNumChannels() > 0)
+    {
+        g.setColour(juce::Colours::red);
+        
+        auto bounds = getLocalBounds();
+        auto totalLength = waveform.getTotalLength();
+        auto numSamples = sibilantBuffer.getNumSamples();
+
+        for (int channel = 0; channel < sibilantBuffer.getNumChannels(); ++channel)
+        {
+            auto* data = sibilantBuffer.getReadPointer(channel);
+
+            for (int i = 0; i < numSamples; ++i)
+            {
+                float x = (static_cast<float>(i) / numSamples) * bounds.getWidth();
+                float y = bounds.getHeight() * (0.5f - 0.5f * data[i]); // Map amplitude to Y-axis
+
+                g.fillEllipse(x, y, 2.0f, 2.0f); 
+            }
+        }
+    }
 }
 
 void WaveformDisplay::changeListenerCallback(juce::ChangeBroadcaster* source)

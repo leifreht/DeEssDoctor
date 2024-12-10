@@ -114,6 +114,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
     {
         transportSource.getNextAudioBlock(bufferToFill);
         processorManager.processBlock(*bufferToFill.buffer);
+        
+        juce::AudioBuffer<float> sibilantBuffer;
+        processorManager.getSibilantBuffer(sibilantBuffer); 
+        waveformDisplay.setSibilantBuffer(sibilantBuffer);
     }
 }
 
