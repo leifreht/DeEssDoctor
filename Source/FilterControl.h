@@ -6,7 +6,7 @@
     Author:  Leif Rehtanz
 
   ==============================================================================
-*/
+ */
 
 #pragma once
 
@@ -19,12 +19,14 @@ public:
     ~FilterControl() override = default;
 
     float getFrequency() const;
-    float getQFactor() const;
-    float getGain() const;
+    float getThreshold() const;
+    float getReduction() const;
+    float getHysteresis() const;
 
     juce::Slider frequencySlider;
-    juce::Slider qSlider;
-    juce::Slider gainSlider;
+    juce::Slider thresholdSlider;
+    juce::Slider reductionSlider;
+    juce::Slider hysteresisSlider;
 
 private:
     void resized() override;

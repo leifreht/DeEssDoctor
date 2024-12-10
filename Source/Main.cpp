@@ -4,7 +4,9 @@
 class DeEssDoctorApplication : public juce::JUCEApplication
 {
 public:
-    const juce::String getApplicationName() override       { return "DeEssDoctorApplication"; }
+    DeEssDoctorApplication() = default;
+    
+    const juce::String getApplicationName() override       { return "DeEssDoctor"; }
     const juce::String getApplicationVersion() override    { return "1.0.0"; }
 
     void initialise (const juce::String&) override
@@ -26,7 +28,7 @@ private:
                               juce::Desktop::getInstance().getDefaultLookAndFeel()
                                                       .findColour (juce::ResizableWindow::backgroundColourId),
                               juce::DocumentWindow::allButtons),
-              ownerApp (app)
+              App (app)
         {
             setUsingNativeTitleBar (true);
             setContentOwned (c, true);
@@ -37,11 +39,13 @@ private:
 
         void closeButtonPressed() override
         {
-            ownerApp.systemRequestedQuit();
+            App.systemRequestedQuit();
         }
 
     private:
-        juce::JUCEApplication& ownerApp;
+        juce::JUCEApplication& App;
+        
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 
     std::unique_ptr<MainWindow> mainWindow;

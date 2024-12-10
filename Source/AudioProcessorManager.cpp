@@ -9,77 +9,119 @@
 */
 
 #include "AudioProcessorManager.h"
-#include "Algorithms.h"
 
 AudioProcessorManager::AudioProcessorManager()
-    : mixLevel(0.5f) // Default to 50% mix
 {
-    // Set a default algorithm (e.g., amplitude threshold)
-    setAlgorithm(amplitudeThresholdAlgorithm);
-
-    // Default filter: low-pass at 20 kHz (effectively bypass)
-    filterCoefficients = juce::dsp::IIR::Coefficients<float>::makeLowPass(44100.0f, 20000.0f);
-    iirFilter.coefficients = filterCoefficients;
-
-    // Note: No need to call prepare here; it will be called externally
+    highPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::highpass);
+    highPassFilter.setCutoffFrequency(frequency);
+    
+    allPassFilter.setType(juce::dsp::LinkwitzRileyFilterType::allpass);
 }
 
 void AudioProcessorManager::prepare(double sampleRate, int samplesPerBlock, int numChannels)
 {
-    // Prepare the filter with the given sample rate and number of channels
-    juce::dsp::ProcessSpec spec;
-    spec.sampleRate = sampleRate;
-    spec.maximumBlockSize = samplesPerBlock;
-    spec.numChannels = numChannels;
-
-    iirFilter.prepare(spec);
+    juce::dsp::ProcessSpec spec { sampleRate, static_cast<juce::uint32>(samplesPerBlock), static_cast<juce::uint32>(numChannels) };
+    highPassFilter.prepare(spec);
+    highPassFilter.reset();
+    
+    allPassFilter.prepare(spec);
+    allPassFilter.reset();
 }
 
-void AudioProcessorManager::setAlgorithm(std::function<void(juce::AudioBuffer<float>&)> newAlgorithm)
+void AudioProcessorManager::setDeEssingParameters(float newThreshold, float newMixLevel, float newFrequency, float newHysteresis)
 {
-    currentAlgorithm = newAlgorithm;
-}
-
-void AudioProcessorManager::setFilterParameters(float frequency, float q, float gain)
-{
-    // Create peak filter coefficients dynamically
-    filterCoefficients = juce::dsp::IIR::Coefficients<float>::makePeakFilter(44100.0f, frequency, q, juce::Decibels::decibelsToGain(gain));
-    // Update the filter's coefficients
-    *iirFilter.coefficients = *filterCoefficients;
-}
-
-void AudioProcessorManager::setMixLevel(float newMixLevel)
-{
-    mixLevel = juce::jlimit(0.0f, 1.0f, newMixLevel); // Clamp mixLevel to [0.0, 1.0]
+    threshold = newThreshold;
+    mixLevel = newMixLevel;
+    frequency = newFrequency;
+    hysteresisSamples = (int) newHysteresis;
+    highPassFilter.setCutoffFrequency(frequency);
 }
 
 void AudioProcessorManager::processBlock(juce::AudioBuffer<float>& buffer)
 {
-    if (currentAlgorithm)
+    applyDeEssing(buffer);
+}
+
+void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
+{
+    // Create a buffer to store sibilants
+    juce::AudioBuffer<float> sibilantBuffer;
+    sibilantBuffer.makeCopyOf(buffer);
+    
+    juce::AudioBuffer<float> originalBuffer;
+    originalBuffer.makeCopyOf(buffer);
+    
+    // Apply high-pass filter to isolate sibilants
+    juce::dsp::AudioBlock<float> sibilantBlock(sibilantBuffer);
+    juce::dsp::ProcessContextReplacing<float> sibilantContext(sibilantBlock);
+    highPassFilter.process(sibilantContext);
+    
+    // Apply all-pass filter to the original buffer to align delays
+    juce::dsp::AudioBlock<float> originalBlock(originalBuffer);
+    juce::dsp::ProcessContextReplacing<float> originalContext(originalBlock);
+    allPassFilter.process(originalContext);
+    
+    buffer.clear();
+    
+    if (hysteresisCounters.size() != static_cast<size_t>(buffer.getNumChannels()))
     {
-        // Create a copy of the original buffer for processing
-        juce::AudioBuffer<float> processedBuffer;
-        processedBuffer.makeCopyOf(buffer);
-
-        // Apply the S-detection algorithm
-        currentAlgorithm(processedBuffer);
-
-        // Apply filtering to the detected S-regions
-        applyFilter(processedBuffer);
-
-        // Mix processed and original audio based on mixLevel
-        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+        hysteresisCounters.resize(buffer.getNumChannels(), 0);
+    }
+    
+    
+    // Process each channel for sibilant detection and removal
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        auto* originalData = originalBuffer.getWritePointer(channel);
+        auto* sibilantData = sibilantBuffer.getWritePointer(channel);
+        
+        int& counter = hysteresisCounters[channel];
+        
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            buffer.applyGain(channel, 0, buffer.getNumSamples(), 1.0f - mixLevel); // Scale original
-            processedBuffer.applyGain(channel, 0, processedBuffer.getNumSamples(), mixLevel); // Scale processed
-            buffer.addFrom(channel, 0, processedBuffer, channel, 0, buffer.getNumSamples()); // Add them
+            //            // Detect sibilants above the threshold
+            //            if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
+            //            {
+            //                originalData[sample] -= sibilantData[sample]; // Subtract sibilant from original
+            //            }
+            //            else
+            //            {
+            //                sibilantData[sample] = 0.0f; // Zero out non-sibilant regions
+            //            }
+            // Check if the sample crosses the upper threshold
+            if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
+            {
+                counter = hysteresisSamples; // Reset the counter
+            }
+            
+            // If the counter is active, classify as sibilant
+            if (counter > 0)
+            {
+                --counter;
+                originalData[sample] -= sibilantData[sample]; // Subtract sibilant from original
+            }
+            else
+            {
+                sibilantData[sample] = 0.0f; // Zero out non-sibilant regions
+            }
+        }
+    }
+    
+    // Mix adjusted sibilants back into the original signal
+    float gainFactor = juce::Decibels::decibelsToGain(mixLevel);
+    //    DBG("Gain factor: " << gainFactor << " Mix level: " << mixLevel);
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    {
+        auto* originalData = originalBuffer.getWritePointer(channel);
+        auto* sibilantData = sibilantBuffer.getWritePointer(channel);
+        
+        auto* finalData = buffer.getWritePointer(channel);
+        
+        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+        {
+            finalData[sample] = originalData[sample]; // Copy original data
+            finalData[sample] += gainFactor * sibilantData[sample]; // Mix sibilants back
         }
     }
 }
 
-void AudioProcessorManager::applyFilter(juce::AudioBuffer<float>& buffer)
-{
-    juce::dsp::AudioBlock<float> block(buffer);
-    juce::dsp::ProcessContextReplacing<float> context(block);
-    iirFilter.process(context);
-}

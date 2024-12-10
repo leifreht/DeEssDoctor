@@ -1,11 +1,18 @@
 /*
   ==============================================================================
 
-    Utility.cpp
-    Created: 18 Nov 2024 12:08:54pm
+    SibilantRegion.h
+    Created: 3 Dec 2024 2:55:13pm
     Author:  Leif Rehtanz
 
   ==============================================================================
 */
 
-#include "Utility.h"
+// SibilantRegion.h
+#pragma once
+
+struct SibilantRegion
+{
+    int startSample;
+    int endSample;
+};

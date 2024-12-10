@@ -10,42 +10,42 @@
 
 #include "FilterControl.h"
 
+#include "FilterControl.h"
+
 FilterControl::FilterControl()
 {
     addAndMakeVisible(frequencySlider);
-    addAndMakeVisible(qSlider);
-    addAndMakeVisible(gainSlider);
-
-    frequencySlider.setRange(20.0, 20000.0);
-    frequencySlider.setValue(1000.0);
+    frequencySlider.setRange(2000.0, 20000.0, 10.0);
+    frequencySlider.setValue(4000.0);
     frequencySlider.setTextValueSuffix(" Hz");
-    frequencySlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    frequencySlider.setPopupDisplayEnabled(true, false, this);
-    frequencySlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
 
-    qSlider.setRange(0.1, 10.0);
-    qSlider.setValue(1.0);
-    qSlider.setTextValueSuffix(" Q");
-    qSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    qSlider.setPopupDisplayEnabled(true, false, this);
-    qSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    addAndMakeVisible(thresholdSlider);
+    thresholdSlider.setRange(-60.0, 0.0, 0.1);
+    thresholdSlider.setValue(-20.0);
+    thresholdSlider.setTextValueSuffix(" dB");
 
-    gainSlider.setRange(-24.0, 24.0);
-    gainSlider.setValue(0.0);
-    gainSlider.setTextValueSuffix(" dB");
-    gainSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    gainSlider.setPopupDisplayEnabled(true, false, this);
-    gainSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 100, 20);
+    addAndMakeVisible(reductionSlider);
+    reductionSlider.setRange(-60.0, 6.0, 0.1);
+    reductionSlider.setValue(0.0);
+    reductionSlider.setTextValueSuffix(" dB");
+    
+    addAndMakeVisible(hysteresisSlider);
+    hysteresisSlider.setRange(1.0, 300.0, 1.0);
+    hysteresisSlider.setValue(50.0);
+    hysteresisSlider.setTextValueSuffix(" samples");
+    
 }
 
 float FilterControl::getFrequency() const { return frequencySlider.getValue(); }
-float FilterControl::getQFactor() const { return qSlider.getValue(); }
-float FilterControl::getGain() const { return gainSlider.getValue(); }
+float FilterControl::getThreshold() const { return thresholdSlider.getValue(); }
+float FilterControl::getReduction() const { return reductionSlider.getValue(); }
+float FilterControl::getHysteresis() const { return hysteresisSlider.getValue(); }
 
 void FilterControl::resized()
 {
     auto area = getLocalBounds().reduced(10);
-    frequencySlider.setBounds(area.removeFromTop(30));
-    qSlider.setBounds(area.removeFromTop(30));
-    gainSlider.setBounds(area.removeFromTop(30));
+    frequencySlider.setBounds(area.removeFromTop(25));
+    thresholdSlider.setBounds(area.removeFromTop(25));
+    reductionSlider.setBounds(area.removeFromTop(25));
+    hysteresisSlider.setBounds(area.removeFromTop(25));
 }
