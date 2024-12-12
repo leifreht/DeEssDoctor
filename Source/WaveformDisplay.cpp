@@ -63,7 +63,6 @@ void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 
     // Draw the original waveform as mono (just channel 0)
     g.setColour(juce::Colours::blue);
-    // Draw only the first channel of the thumbnail
     if (waveform.getNumChannels() > 0)
     {
         waveform.drawChannel(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 0, 1.0f);
@@ -75,23 +74,40 @@ void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
         g.setColour(juce::Colours::red);
         auto bounds = getLocalBounds();
         auto numSamples = sibilantBuffer.getNumSamples();
-
-        // Use only channel 0 for a mono representation of sibilants
         auto* data = sibilantBuffer.getReadPointer(0);
+
+        int totalWidth = bounds.getWidth();
+        if (totalWidth <= 0 || numSamples == 0)
+            return;
+
+        // Determine how many samples correspond to one vertical line
+        int step = std::max(1, numSamples / totalWidth);
+
         juce::Path sibilantPath;
-
-        // To speed up drawing, consider skipping samples if you have many.
-        // For now, we just draw every sample.
-        for (int i = 0; i < numSamples; ++i)
+        // We'll draw a vertical line per pixel column representing the min/max in that segment
+        for (int x = 0; x < totalWidth; ++x)
         {
-            float x = (static_cast<float>(i) / numSamples) * bounds.getWidth();
-            // Scale and center waveform: data[i] expected to be in [-1, 1]
-            float y = bounds.getHeight() * (0.5f - 0.5f * data[i]);
+            int start = x * step;
+            int end = std::min(start + step, numSamples);
 
-            if (i == 0)
-                sibilantPath.startNewSubPath(x, y);
-            else
-                sibilantPath.lineTo(x, y);
+            float minVal = std::numeric_limits<float>::max();
+            float maxVal = std::numeric_limits<float>::lowest();
+
+            // Find min and max in this chunk
+            for (int i = start; i < end; ++i)
+            {
+                float sampleVal = data[i];
+                if (sampleVal < minVal) minVal = sampleVal;
+                if (sampleVal > maxVal) maxVal = sampleVal;
+            }
+
+            // Convert min/max to vertical coordinates
+            float yMin = bounds.getHeight() * (0.5f - 0.5f * maxVal);
+            float yMax = bounds.getHeight() * (0.5f - 0.5f * minVal);
+
+            // Draw a vertical line from min to max
+            sibilantPath.startNewSubPath((float)x, yMin);
+            sibilantPath.lineTo((float)x, yMax);
         }
 
         g.strokePath(sibilantPath, juce::PathStrokeType(1.0f));
