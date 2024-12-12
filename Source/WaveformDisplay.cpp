@@ -61,36 +61,40 @@ void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
 
-    // Draw original waveform
+    // Draw the original waveform as mono (just channel 0)
     g.setColour(juce::Colours::blue);
-    waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+    // Draw only the first channel of the thumbnail
+    if (waveform.getNumChannels() > 0)
+    {
+        waveform.drawChannel(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 0, 1.0f);
+    }
 
-    // Draw sibilants as overlay
+    // Draw sibilants as overlay (just take channel 0 for mono)
     if (hasSibilantData && sibilantBuffer.getNumChannels() > 0)
     {
         g.setColour(juce::Colours::red);
         auto bounds = getLocalBounds();
-        auto totalLength = waveform.getTotalLength();
         auto numSamples = sibilantBuffer.getNumSamples();
 
-        for (int channel = 0; channel < sibilantBuffer.getNumChannels(); ++channel)
+        // Use only channel 0 for a mono representation of sibilants
+        auto* data = sibilantBuffer.getReadPointer(0);
+        juce::Path sibilantPath;
+
+        // To speed up drawing, consider skipping samples if you have many.
+        // For now, we just draw every sample.
+        for (int i = 0; i < numSamples; ++i)
         {
-            auto* data = sibilantBuffer.getReadPointer(channel);
-            juce::Path sibilantPath;
+            float x = (static_cast<float>(i) / numSamples) * bounds.getWidth();
+            // Scale and center waveform: data[i] expected to be in [-1, 1]
+            float y = bounds.getHeight() * (0.5f - 0.5f * data[i]);
 
-            for (int i = 0; i < numSamples; ++i)
-            {
-                float x = (static_cast<float>(i) / numSamples) * bounds.getWidth();
-                float y = bounds.getHeight() * (0.5f - 0.5f * data[i]);
-
-                if (i == 0)
-                    sibilantPath.startNewSubPath(x, y);
-                else
-                    sibilantPath.lineTo(x, y);
-            }
-
-            g.strokePath(sibilantPath, juce::PathStrokeType(1.0f));
+            if (i == 0)
+                sibilantPath.startNewSubPath(x, y);
+            else
+                sibilantPath.lineTo(x, y);
         }
+
+        g.strokePath(sibilantPath, juce::PathStrokeType(1.0f));
     }
 }
 
