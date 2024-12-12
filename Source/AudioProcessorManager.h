@@ -12,6 +12,8 @@
 
 #include <JuceHeader.h>
 #include <functional>
+#include <vector>
+#include "SibilantRegion.h" // Ensure this is included
 
 class AudioProcessorManager
 {
@@ -21,7 +23,6 @@ public:
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
     void setDeEssingParameters(float newThreshold, float newReduction, float newFrequency, float newHysteresis);
-
     void processBlock(juce::AudioBuffer<float>& buffer);
     void processFileForSibilants(const juce::File& file);
 

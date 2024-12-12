@@ -34,6 +34,8 @@
       <FILE id="UA6reC" name="BufferAudioSource.h" compile="0" resource="0"
             file="Source/BufferAudioSource.h"/>
       <FILE id="KMrMB8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="EO0IVZ" name="SibilantRegion.h" compile="0" resource="0"
+            file="Source/SibilantRegion.h"/>
       <FILE id="GixoiF" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="GsDCpY" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>

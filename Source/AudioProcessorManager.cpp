@@ -26,6 +26,7 @@ AudioProcessorManager::AudioProcessorManager()
 
 void AudioProcessorManager::prepare(double sampleRate, int samplesPerBlock, int numChannels)
 {
+
     juce::dsp::ProcessSpec spec{ sampleRate, static_cast<juce::uint32>(samplesPerBlock), static_cast<juce::uint32>(numChannels) };
     highPassFilter.prepare(spec);
     highPassFilter.reset();
@@ -35,6 +36,7 @@ void AudioProcessorManager::prepare(double sampleRate, int samplesPerBlock, int 
 }
 
 void AudioProcessorManager::setDeEssingAlgorithm(std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> algorithm)
+
 {
     deEssingAlgorithm = std::move(algorithm);
 }
@@ -47,6 +49,7 @@ void AudioProcessorManager::setDeEssingParameters(float newThreshold, float newM
     hysteresisSamples = (int)newHysteresis;
 
     highPassFilter.setCutoffFrequency(frequency);
+
 }
 
 void AudioProcessorManager::processFileForSibilants(const juce::File& file)
@@ -119,6 +122,7 @@ void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& b
         int counter = 0; // local hysteresis counter
 
         for (int sample = 0; sample < numSamples; ++sample)
+
         {
             // Check threshold
             if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))

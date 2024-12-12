@@ -11,8 +11,8 @@
 #include "WaveformDisplay.h"
 
 WaveformDisplay::WaveformDisplay(int sourceSamplesPerWaveformSample,
-                                                   juce::AudioFormatManager& formatManager,
-                                                   juce::AudioThumbnailCache& cache)
+                                 juce::AudioFormatManager& formatManager,
+                                 juce::AudioThumbnailCache& cache)
     : waveform(sourceSamplesPerWaveformSample, formatManager, cache)
 {
     waveform.addChangeListener(this);
@@ -124,5 +124,4 @@ void WaveformDisplay::waveformChanged()
 {
     repaint();
 }
-
 

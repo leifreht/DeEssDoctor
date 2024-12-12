@@ -14,6 +14,7 @@
 
 FilterControl::FilterControl()
 {
+    // Frequency Slider
     addAndMakeVisible(frequencySlider);
     frequencySlider.setRange(2000.0, 20000.0, 10.0);
     frequencySlider.setValue(4000.0);
@@ -33,7 +34,6 @@ FilterControl::FilterControl()
     hysteresisSlider.setRange(1.0, 300.0, 1.0);
     hysteresisSlider.setValue(50.0);
     hysteresisSlider.setTextValueSuffix(" samples");
-    
 }
 
 float FilterControl::getFrequency() const { return frequencySlider.getValue(); }
