@@ -11,7 +11,6 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <memory>
 #include <functional>
 #include <vector>
 #include "SibilantRegion.h" // Ensure this is included
@@ -23,31 +22,39 @@ public:
     ~AudioProcessorManager() = default;
 
     void prepare(double sampleRate, int samplesPerBlock, int numChannels);
-    void setAlgorithm(std::function<void(juce::AudioBuffer<float>&, std::vector<SibilantRegion>&)> newAlgorithm);
-    void setFilterParameters(float frequency, float q, float gain);
-    void setMixLevel(float mixLevel);
-
+    void setDeEssingParameters(float newThreshold, float newReduction, float newFrequency, float newHysteresis);
     void processBlock(juce::AudioBuffer<float>& buffer);
+    void processFileForSibilants(const juce::File& file);
 
-    // Get detected sibilant regions for visualization
-    const std::vector<SibilantRegion>& getSibilantRegions() const { return sibilantRegions; }
+    const juce::AudioBuffer<float>& getOriginalBuffer() const { return originalBuffer; }
+    const juce::AudioBuffer<float>& getProcessedBuffer() const { return processedBuffer; }
+    const juce::AudioBuffer<float>& getSibilantBuffer() const { return sibilantBuffer; }
+
+    void setDeEssingAlgorithm(std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> algorithm);
+    
+    double getSampleRate() const { return processedSampleRate; }
 
 private:
-    std::function<void(juce::AudioBuffer<float>&, std::vector<SibilantRegion>&)> currentAlgorithm; // S-detection algorithm
+    double processedSampleRate = 44100.0;
+    
+    juce::AudioBuffer<float> originalBuffer;
+    juce::AudioBuffer<float> processedBuffer;
+    juce::AudioBuffer<float> sibilantBuffer;
 
-    // Single high-pass filter for mono
-    juce::dsp::IIR::Filter<float> highPassFilter;
-    juce::dsp::IIR::Coefficients<float>::Ptr highPassCoefficients;
+    // Filters for default de-essing algorithm
+    juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
+    juce::dsp::LinkwitzRileyFilter<float> allPassFilter;
 
-    // Single high-shelf filter for processing sibilants
-    juce::dsp::IIR::Filter<float> highShelfFilter;
-    juce::dsp::IIR::Coefficients<float>::Ptr highShelfCoefficients;
+    // Parameters
+    float threshold{ -20.0f };
+    float mixLevel{ 0.0f };
+    float frequency{ 6500.0f };
+    int hysteresisSamples{ 100 };
+//    std::vector<int> hysteresisCounters; 
 
-    float mixLevel; // 0.0 (original) to 1.0 (processed)
+    // Customizable de-essing algorithm
+    std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> deEssingAlgorithm;
 
-    std::vector<SibilantRegion> sibilantRegions; // Detected sibilant regions
-
-    void applyHighPassFilter(juce::AudioBuffer<float>& buffer);
-    void applyHighShelfFilter(juce::AudioBuffer<float>& buffer);
+    // Default de-essing logic
+    void defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples);
 };
- 

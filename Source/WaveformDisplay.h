@@ -27,7 +27,12 @@ class WaveformDisplay : public juce::Component,
     void setSampleRate(double rate);
     void paint(juce::Graphics& g) override;
     
+    void setSibilantBuffer(const juce::AudioBuffer<float>& buffer);
+    
     private:
+    juce::AudioBuffer<float> sibilantBuffer;
+    bool hasSibilantData = false;
+    
     void paintIfNoFileLoaded(juce::Graphics& g);
     void paintIfFileLoaded(juce::Graphics& g);
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
@@ -36,5 +41,5 @@ class WaveformDisplay : public juce::Component,
     juce::AudioThumbnail waveform;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WaveformDisplay)
-}
+};
 

@@ -23,15 +23,16 @@ void WaveformDisplay::setFile(const juce::File& file)
     waveform.setSource(new juce::FileInputSource(file));
 }
 
-void WaveformDisplay::setSampleRate(double rate)
+void WaveformDisplay::setSibilantBuffer(const juce::AudioBuffer<float>& buffer)
 {
-    sampleRate = rate;
-}
+    sibilantBuffer.makeCopyOf(buffer);
+    hasSibilantData = true;
 
-void WaveformDisplay::setSibilantRegions(const std::vector<SibilantRegion>& regions)
-{
-    sibilantRegions = regions;
-    repaint();
+    // Schedule repaint on the message thread
+    juce::MessageManager::callAsync([this]()
+    {
+        repaint();
+    });
 }
 
 void WaveformDisplay::paint(juce::Graphics& g)
@@ -49,41 +50,67 @@ void WaveformDisplay::paintIfNoFileLoaded(juce::Graphics& g)
     g.drawFittedText("No File Loaded", getLocalBounds(), juce::Justification::centred, 1);
 }
 
+//void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
+//{
+//    g.fillAll(juce::Colours::white);
+//    g.setColour(juce::Colours::blue);
+//    waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
+//}
+
 void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
 
-    // Draw the waveform
-
+    // Draw the original waveform as mono (just channel 0)
     g.setColour(juce::Colours::blue);
-    waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
-
-    // Overlay sibilant regions
-    g.setColour(juce::Colours::red.withAlpha(0.5f)); // Semi-transparent red
-
-    for (const auto& region : sibilantRegions)
+    if (waveform.getNumChannels() > 0)
     {
-        // Convert sample indices to time
-        double startTime = (sampleRate > 0.0) ? static_cast<double>(region.startSample) / sampleRate : 0.0;
-        double endTime = (sampleRate > 0.0) ? static_cast<double>(region.endSample) / sampleRate : 0.0;
+        waveform.drawChannel(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 0, 1.0f);
+    }
 
-        // Prevent division by zero
-        if (waveform.getTotalLength() <= 0.0)
-            continue;
+    // Draw sibilants as overlay (just take channel 0 for mono)
+    if (hasSibilantData && sibilantBuffer.getNumChannels() > 0)
+    {
+        g.setColour(juce::Colours::red);
+        auto bounds = getLocalBounds();
+        auto numSamples = sibilantBuffer.getNumSamples();
+        auto* data = sibilantBuffer.getReadPointer(0);
 
-        // Convert time to x position
-        float startX = static_cast<float>((startTime / waveform.getTotalLength()) * getWidth());
-        float endX = static_cast<float>((endTime / waveform.getTotalLength()) * getWidth());
+        int totalWidth = bounds.getWidth();
+        if (totalWidth <= 0 || numSamples == 0)
+            return;
 
-        // Ensure that startX is less than endX
-        if (startX >= endX)
-            continue;
+        // Determine how many samples correspond to one vertical line
+        int step = std::max(1, numSamples / totalWidth);
 
-        // Create a Rectangle<float> explicitly
-        juce::Rectangle<float> rect(startX, 0.0f, endX - startX, static_cast<float>(getHeight()));
+        juce::Path sibilantPath;
+        // We'll draw a vertical line per pixel column representing the min/max in that segment
+        for (int x = 0; x < totalWidth; ++x)
+        {
+            int start = x * step;
+            int end = std::min(start + step, numSamples);
 
-        // Draw a rectangle over the sibilant region
-        g.fillRect(rect);
+            float minVal = std::numeric_limits<float>::max();
+            float maxVal = std::numeric_limits<float>::lowest();
+
+            // Find min and max in this chunk
+            for (int i = start; i < end; ++i)
+            {
+                float sampleVal = data[i];
+                if (sampleVal < minVal) minVal = sampleVal;
+                if (sampleVal > maxVal) maxVal = sampleVal;
+            }
+
+            // Convert min/max to vertical coordinates
+            float yMin = bounds.getHeight() * (0.5f - 0.5f * maxVal);
+            float yMax = bounds.getHeight() * (0.5f - 0.5f * minVal);
+
+            // Draw a vertical line from min to max
+            sibilantPath.startNewSubPath((float)x, yMin);
+            sibilantPath.lineTo((float)x, yMax);
+        }
+
+        g.strokePath(sibilantPath, juce::PathStrokeType(1.0f));
     }
 }
 
