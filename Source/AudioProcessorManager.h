@@ -24,8 +24,13 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer);
     
     void getSibilantBuffer(juce::AudioBuffer<float>& buffer) const;
+    
+    void processFileForSibilants(const juce::File& file);
+    const juce::AudioBuffer<float>& getProcessedBuffer() const { return processedBuffer; }
 
 private:
+    juce::AudioBuffer<float> processedBuffer; 
+    
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;
     juce::dsp::LinkwitzRileyFilter<float> allPassFilter;
     
@@ -37,6 +42,6 @@ private:
 
     void applyDeEssing(juce::AudioBuffer<float>& buffer);
     
-    juce::AudioBuffer<float> lastSibilantBuffer; 
+    juce::AudioBuffer<float> lastSibilantBuffer;
 };
  

@@ -22,6 +22,11 @@ waveformDisplay(512, formatManager, waveformCache),
     stopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::red);
     stopButton.setEnabled(false);
     
+    addAndMakeVisible(processButton);
+    processButton.onClick = [this]() {
+        processFile();
+    };
+    
     addAndMakeVisible(&waveformDisplay);
     addAndMakeVisible(&positionOverlay);
     
@@ -104,20 +109,42 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
             << ", num channels: " << numChannels);
 }
 
+//void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
+//{
+//    if (readerSource.get() == nullptr)
+//    {
+//        bufferToFill.clearActiveBufferRegion();
+//    }
+//    else
+//    {
+//        transportSource.getNextAudioBlock(bufferToFill);
+//        processorManager.processBlock(*bufferToFill.buffer);
+//        
+////        juce::AudioBuffer<float> sibilantBuffer;
+////        processorManager.getSibilantBuffer(sibilantBuffer);
+////        waveformDisplay.setSibilantBuffer(sibilantBuffer);
+//    }
+//}
+
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    if (readerSource.get() == nullptr)
+    if (!readerSource || processorManager.getProcessedBuffer().getNumSamples() == 0)
     {
         bufferToFill.clearActiveBufferRegion();
+        return;
     }
-    else
+
+    auto& processedBuffer = processorManager.getProcessedBuffer();
+    auto numSamples = bufferToFill.buffer->getNumSamples();
+    auto startSample = bufferToFill.startSample;
+
+    for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
     {
-        transportSource.getNextAudioBlock(bufferToFill);
-        processorManager.processBlock(*bufferToFill.buffer);
-        
-        juce::AudioBuffer<float> sibilantBuffer;
-        processorManager.getSibilantBuffer(sibilantBuffer); 
-        waveformDisplay.setSibilantBuffer(sibilantBuffer);
+        auto* dest = bufferToFill.buffer->getWritePointer(channel, startSample);
+        auto* src = processedBuffer.getReadPointer(channel);
+
+        for (int i = 0; i < numSamples; ++i)
+            dest[i] = src[i];
     }
 }
 
@@ -141,7 +168,8 @@ void MainComponent::resized()
     juce::FlexBox topSection;
     topSection.flexDirection = juce::FlexBox::Direction::row;
     topSection.items.add(juce::FlexItem(fileLabel).withFlex(1.0f));
-    topSection.items.add(juce::FlexItem(openButton).withFlex(0.5f));
+    topSection.items.add(juce::FlexItem(openButton).withFlex(0.25f));
+    topSection.items.add(juce::FlexItem(processButton).withFlex(0.25f));
     topSection.performLayout(bounds.removeFromTop(topSectionHeight));
 
     // Middle section layout: Waveform + Overlay
@@ -227,6 +255,7 @@ void MainComponent::openButtonClicked()
 
         if (file != juce::File{})
         {
+            loadedFile = file;
             auto* reader = formatManager.createReaderFor (file);
             fileLabel.setText(file.getFileName(), juce::dontSendNotification);
 
@@ -250,6 +279,32 @@ void MainComponent::playButtonClicked()
 void MainComponent::stopButtonClicked()
 {
     changeState(Stopping);
+}
+
+void MainComponent::processFile()
+{
+    if (!loadedFile.existsAsFile())
+    {
+        DBG("No file loaded to process!");
+        return;
+    }
+
+    processorManager.setDeEssingParameters(
+        filterControl.getThreshold(),
+        filterControl.getReduction(),
+        filterControl.getFrequency(),
+        filterControl.getHysteresis()
+    );
+
+    // Process the file for sibilants
+    processorManager.processFileForSibilants(loadedFile);
+
+    // Pass the processed sibilant data to the waveform display
+    juce::AudioBuffer<float> sibilantBuffer;
+    processorManager.getSibilantBuffer(sibilantBuffer);
+    waveformDisplay.setSibilantBuffer(sibilantBuffer);
+
+    repaint();
 }
 
 

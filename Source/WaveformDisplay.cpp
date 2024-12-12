@@ -61,15 +61,14 @@ void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
 {
     g.fillAll(juce::Colours::white);
 
-    // Draw the original waveform in blue
+    // Draw original waveform
     g.setColour(juce::Colours::blue);
     waveform.drawChannels(g, getLocalBounds(), 0.0, waveform.getTotalLength(), 1.0f);
 
-    // Draw the sibilants in red, if available
+    // Draw sibilants as overlay
     if (hasSibilantData && sibilantBuffer.getNumChannels() > 0)
     {
         g.setColour(juce::Colours::red);
-        
         auto bounds = getLocalBounds();
         auto totalLength = waveform.getTotalLength();
         auto numSamples = sibilantBuffer.getNumSamples();
@@ -77,14 +76,20 @@ void WaveformDisplay::paintIfFileLoaded(juce::Graphics& g)
         for (int channel = 0; channel < sibilantBuffer.getNumChannels(); ++channel)
         {
             auto* data = sibilantBuffer.getReadPointer(channel);
+            juce::Path sibilantPath;
 
             for (int i = 0; i < numSamples; ++i)
             {
                 float x = (static_cast<float>(i) / numSamples) * bounds.getWidth();
-                float y = bounds.getHeight() * (0.5f - 0.5f * data[i]); // Map amplitude to Y-axis
+                float y = bounds.getHeight() * (0.5f - 0.5f * data[i]);
 
-                g.fillEllipse(x, y, 2.0f, 2.0f); 
+                if (i == 0)
+                    sibilantPath.startNewSubPath(x, y);
+                else
+                    sibilantPath.lineTo(x, y);
             }
+
+            g.strokePath(sibilantPath, juce::PathStrokeType(1.0f));
         }
     }
 }

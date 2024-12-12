@@ -21,11 +21,15 @@ public:
     void resized() override;
     
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
-
+    
+    void processFile();
+    
 //    void paint(juce::Graphics& g) override;
 
 
 private:
+    juce::File loadedFile; 
+    
     enum TransportState
     {
         Stopped,
@@ -42,6 +46,7 @@ private:
     juce::TextButton openButton;
     juce::TextButton playButton;
     juce::TextButton stopButton;
+    juce::TextButton processButton{"Process"}; 
     
     std::unique_ptr<juce::FileChooser> chooser;
 

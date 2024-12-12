@@ -44,7 +44,7 @@ void AudioProcessorManager::processBlock(juce::AudioBuffer<float>& buffer)
 
 void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
 {
-    // Create a buffer to store sibilants
+    
     juce::AudioBuffer<float> sibilantBuffer;
     sibilantBuffer.makeCopyOf(buffer);
     
@@ -79,15 +79,6 @@ void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
         
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
-            //            // Detect sibilants above the threshold
-            //            if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
-            //            {
-            //                originalData[sample] -= sibilantData[sample]; // Subtract sibilant from original
-            //            }
-            //            else
-            //            {
-            //                sibilantData[sample] = 0.0f; // Zero out non-sibilant regions
-            //            }
             // Check if the sample crosses the upper threshold
             if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
             {
@@ -130,5 +121,26 @@ void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
 void AudioProcessorManager::getSibilantBuffer(juce::AudioBuffer<float>& buffer) const
 {
     buffer.makeCopyOf(lastSibilantBuffer); 
+}
+
+void AudioProcessorManager::processFileForSibilants(const juce::File& file)
+{
+    juce::AudioFormatManager formatManager;
+    formatManager.registerBasicFormats();
+
+    auto reader = std::unique_ptr<juce::AudioFormatReader>(formatManager.createReaderFor(file));
+    if (reader == nullptr)
+    {
+        DBG("Failed to create AudioFormatReader for the file.");
+        return;
+    }
+
+    processedBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
+    reader->read(&processedBuffer, 0, (int)reader->lengthInSamples, 0, true, true);
+
+    applyDeEssing(processedBuffer);
+
+    // Save sibilant buffer for visualization
+    lastSibilantBuffer.makeCopyOf(processedBuffer);
 }
 
