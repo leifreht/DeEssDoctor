@@ -60,6 +60,7 @@ void AudioProcessorManager::processFileForSibilants(const juce::File& file)
         DBG("Failed to create AudioFormatReader for the file.");
         return;
     }
+    processedSampleRate = reader->sampleRate;
 
     // Resize buffers
     originalBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);

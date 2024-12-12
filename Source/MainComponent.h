@@ -33,7 +33,8 @@ private:
     };
 
     // Member variables
-    PlaybackMode playbackMode = PlaybackMode::Original; // Default to original playback mode
+    PlaybackMode playbackMode = PlaybackMode::Original;
+    void updatePlaybackSource();
 
     juce::File loadedFile; // Currently loaded file
 

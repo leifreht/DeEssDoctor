@@ -30,8 +30,12 @@ public:
     const juce::AudioBuffer<float>& getSibilantBuffer() const { return sibilantBuffer; }
 
     void setDeEssingAlgorithm(std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> algorithm);
+    
+    double getSampleRate() const { return processedSampleRate; }
 
 private:
+    double processedSampleRate = 44100.0;
+    
     juce::AudioBuffer<float> originalBuffer;
     juce::AudioBuffer<float> processedBuffer;
     juce::AudioBuffer<float> sibilantBuffer;

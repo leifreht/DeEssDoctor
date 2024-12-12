@@ -87,17 +87,17 @@ waveformDisplay(512, formatManager, waveformCache),
     
     originalButton.onClick = [this]() {
         playbackMode = PlaybackMode::Original;
-        processFile(); // Reload the file with the selected playback mode
+        updatePlaybackSource();
     };
 
     sibilantsButton.onClick = [this]() {
         playbackMode = PlaybackMode::SibilantsOnly;
-        processFile();
+        updatePlaybackSource();
     };
 
     deEssedButton.onClick = [this]() {
         playbackMode = PlaybackMode::DeEssed;
-        processFile();
+        updatePlaybackSource();
     };
 
     addAndMakeVisible(originalButton);
@@ -133,47 +133,55 @@ void MainComponent::processFile()
         filterControl.getHysteresis()
     );
 
-    // Process the file offline: this updates original, processed, and sibilant buffers.
+    // Process the file offline: this updates original, processed, and sibilant buffers
     processorManager.processFileForSibilants(loadedFile);
 
-    // Release previous source
+    // After processing, call updatePlaybackSource() to ensure the current mode's buffer is used
+    updatePlaybackSource();
+
+    DBG("Processing complete.");
+}
+
+void MainComponent::updatePlaybackSource()
+{
+    // Ensure we have processed buffers available. If not processed yet, do nothing or prompt the user.
+    // For now, let's assume "Process" was already clicked at least once, or we have an original file.
+
+    // Remove the previous source
     transportSource.setSource(nullptr);
 
-    // Create a suitable reader to get sampleRate
-    std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(loadedFile));
-    if (reader == nullptr)
-    {
-        DBG("Failed to create AudioFormatReader for the file.");
-        return;
-    }
-
-    // Choose which buffer to play based on playbackMode
+    // Choose the buffer based on playbackMode
     const juce::AudioBuffer<float>* chosenBuffer = nullptr;
     switch (playbackMode)
     {
         case PlaybackMode::Original:
             chosenBuffer = &processorManager.getOriginalBuffer();
             break;
-
         case PlaybackMode::SibilantsOnly:
             chosenBuffer = &processorManager.getSibilantBuffer();
             break;
-
         case PlaybackMode::DeEssed:
             chosenBuffer = &processorManager.getProcessedBuffer();
             break;
     }
 
-    bufferAudioSource = std::make_unique<BufferAudioSource>(*chosenBuffer, reader->sampleRate);
+    if (chosenBuffer->getNumSamples() == 0)
+    {
+        DBG("No processed data available. Maybe the user hasn't processed yet?");
+        return;
+    }
+
+    // Create a BufferAudioSource for the chosen buffer
+    // We need the sample rate of the file. You can store it from processFile() or reader creation.
+    // For now, assume we stored 'lastSampleRate' in processFile().
+    double sampleRate = processorManager.getSampleRate(); // (Add a getter in processorManager if needed.)
+    bufferAudioSource = std::make_unique<BufferAudioSource>(*chosenBuffer, sampleRate);
     transportSource.setSource(bufferAudioSource.get(), 0, nullptr);
 
-    // Update waveform display
-    // Always show sibilant overlay if available:
+    // Update waveform display's sibilant overlay to always show sibilants if needed
     waveformDisplay.setSibilantBuffer(processorManager.getSibilantBuffer());
 
     repaint();
-
-    DBG("Processing complete and new source set.");
 }
 
 
