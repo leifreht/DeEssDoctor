@@ -125,7 +125,7 @@ void MainComponent::processFile()
         return;
     }
 
-    // Set de-essing parameters
+    // Set parameters
     processorManager.setDeEssingParameters(
         filterControl.getThreshold(),
         filterControl.getReduction(),
@@ -133,25 +133,44 @@ void MainComponent::processFile()
         filterControl.getHysteresis()
     );
 
-    // Process the file offline
+    // Process the file offline: this updates original, processed, and sibilant buffers.
     processorManager.processFileForSibilants(loadedFile);
 
-    // Release the previous source before assigning a new one
-    transportSource.setSource(nullptr); // Important to avoid EXC_BAD_ACCESS
+    // Release previous source
+    transportSource.setSource(nullptr);
 
-    // Create a new BufferAudioSource with the processed buffer
-    auto reader = formatManager.createReaderFor(loadedFile);
+    // Create a suitable reader to get sampleRate
+    std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(loadedFile));
     if (reader == nullptr)
     {
         DBG("Failed to create AudioFormatReader for the file.");
         return;
     }
 
-    bufferAudioSource = std::make_unique<BufferAudioSource>(processorManager.getProcessedBuffer(), reader->sampleRate);
-    transportSource.setSource(bufferAudioSource.get(), 0, nullptr); // Assign the new source
+    // Choose which buffer to play based on playbackMode
+    const juce::AudioBuffer<float>* chosenBuffer = nullptr;
+    switch (playbackMode)
+    {
+        case PlaybackMode::Original:
+            chosenBuffer = &processorManager.getOriginalBuffer();
+            break;
 
-    // Update the waveform display with the processed buffer
-    waveformDisplay.setSibilantBuffer(processorManager.getProcessedBuffer());
+        case PlaybackMode::SibilantsOnly:
+            chosenBuffer = &processorManager.getSibilantBuffer();
+            break;
+
+        case PlaybackMode::DeEssed:
+            chosenBuffer = &processorManager.getProcessedBuffer();
+            break;
+    }
+
+    bufferAudioSource = std::make_unique<BufferAudioSource>(*chosenBuffer, reader->sampleRate);
+    transportSource.setSource(bufferAudioSource.get(), 0, nullptr);
+
+    // Update waveform display
+    // Always show sibilant overlay if available:
+    waveformDisplay.setSibilantBuffer(processorManager.getSibilantBuffer());
+
     repaint();
 
     DBG("Processing complete and new source set.");

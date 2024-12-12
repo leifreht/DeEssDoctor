@@ -79,23 +79,24 @@ void AudioProcessorManager::processFileForSibilants(const juce::File& file)
 
 void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples)
 {
-    // High-pass filter to isolate sibilants
-    juce::AudioBuffer<float> sibilantBuffer;
-    sibilantBuffer.makeCopyOf(buffer);
+    // 'buffer' here is our processedBuffer (already a copy of the original)
+    // We'll create a temporary sibilantBuffer copy for processing the sibilant regions
+    juce::AudioBuffer<float> sibilantBufferTemp;
+    sibilantBufferTemp.makeCopyOf(buffer);
 
-    juce::dsp::AudioBlock<float> sibilantBlock(sibilantBuffer);
+    juce::dsp::AudioBlock<float> sibilantBlock(sibilantBufferTemp);
     juce::dsp::ProcessContextReplacing<float> sibilantContext(sibilantBlock);
     highPassFilter.process(sibilantContext);
 
-    // Apply sibilant detection and modification
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
     {
-        auto* sibilantData = sibilantBuffer.getWritePointer(channel);
-        auto* originalData = buffer.getWritePointer(channel);
+        auto* sibilantData = sibilantBufferTemp.getWritePointer(channel);
+        auto* processedData = buffer.getWritePointer(channel);
 
-        int counter = hysteresisSamples;
+        int counter = 0;
         for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
         {
+            // Sibilant detection: if above threshold, reset hysteresis counter
             if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
             {
                 counter = hysteresisSamples;
@@ -103,11 +104,22 @@ void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& b
 
             if (counter > 0)
             {
-                --counter;
-                originalData[sample] -= sibilantData[sample] * juce::Decibels::decibelsToGain(mixLevel);
+                // Mark sibilant region
+                counter--;
+                // Reduce sibilant in the processed buffer
+                processedData[sample] -= sibilantData[sample] * juce::Decibels::decibelsToGain(mixLevel);
+            }
+            else
+            {
+                // Outside sibilant region, zero out in sibilant buffer
+                sibilantData[sample] = 0.0f;
             }
         }
     }
+
+    // Now sibilantBufferTemp contains only sibilant sounds where detected.
+    // Update the class member sibilantBuffer with the isolated sibilants.
+    sibilantBuffer.makeCopyOf(sibilantBufferTemp);
 }
 
 //void AudioProcessorManager::applyDeEssing(juce::AudioBuffer<float>& buffer)
