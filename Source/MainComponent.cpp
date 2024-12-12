@@ -115,7 +115,8 @@ void MainComponent::processFile()
 
     processorManager.processFileForSibilants(loadedFile);
 
-    auto& processedBuffer = processorManager.getProcessedBuffer();
+    transportSource.setSource(nullptr); 
+
     auto reader = formatManager.createReaderFor(loadedFile);
     if (reader == nullptr)
     {
@@ -124,8 +125,9 @@ void MainComponent::processFile()
     }
 
     bufferAudioSource = std::make_unique<BufferAudioSource>(processorManager.getProcessedBuffer(), reader->sampleRate);
-    transportSource.setSource(bufferAudioSource.get());
-    waveformDisplay.setSibilantBuffer(processedBuffer);
+    transportSource.setSource(bufferAudioSource.get(), 0, nullptr);  // Set the new source
+
+    waveformDisplay.setSibilantBuffer(processorManager.getProcessedBuffer());
     repaint();
 }
 
