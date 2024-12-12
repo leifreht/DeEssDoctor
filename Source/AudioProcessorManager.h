@@ -49,6 +49,7 @@ private:
     float mixLevel{ 0.0f };
     float frequency{ 6500.0f };
     int hysteresisSamples{ 100 };
+//    std::vector<int> hysteresisCounters; 
 
     // Customizable de-essing algorithm
     std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> deEssingAlgorithm;

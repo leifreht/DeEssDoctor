@@ -78,26 +78,49 @@ void AudioProcessorManager::processFileForSibilants(const juce::File& file)
 //    deEssingAlgorithm(processedBuffer, sibilantBuffer, threshold, mixLevel, frequency, hysteresisSamples);
 }
 
-void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples)
+void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer,
+                                                     float threshold, float mixLevel,
+                                                     float frequency, int hysteresisSamples)
 {
-    // 'buffer' here is our processedBuffer (already a copy of the original)
-    // We'll create a temporary sibilantBuffer copy for processing the sibilant regions
+    // Make copies of the input buffer for processing
+    juce::AudioBuffer<float> originalBuffer;
     juce::AudioBuffer<float> sibilantBufferTemp;
+
+    originalBuffer.makeCopyOf(buffer);
     sibilantBufferTemp.makeCopyOf(buffer);
 
-    juce::dsp::AudioBlock<float> sibilantBlock(sibilantBufferTemp);
-    juce::dsp::ProcessContextReplacing<float> sibilantContext(sibilantBlock);
-    highPassFilter.process(sibilantContext);
-
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+    // High-pass filter to isolate sibilants
     {
-        auto* sibilantData = sibilantBufferTemp.getWritePointer(channel);
-        auto* processedData = buffer.getWritePointer(channel);
+        juce::dsp::AudioBlock<float> sibilantBlock(sibilantBufferTemp);
+        juce::dsp::ProcessContextReplacing<float> sibilantContext(sibilantBlock);
+        highPassFilter.setCutoffFrequency(frequency);
+        highPassFilter.process(sibilantContext);
+    }
 
-        int counter = 0;
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    // All-pass filter to align phase/time with the high-passed signal
+    {
+        juce::dsp::AudioBlock<float> originalBlock(originalBuffer);
+        juce::dsp::ProcessContextReplacing<float> originalContext(originalBlock);
+        allPassFilter.process(originalContext);
+    }
+
+    // Clear the final buffer to build from scratch
+    buffer.clear();
+
+    int numChannels = buffer.getNumChannels();
+    int numSamples = buffer.getNumSamples();
+
+    // Hysteresis-based sibilant detection and subtraction
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        auto* originalData = originalBuffer.getWritePointer(channel);
+        auto* sibilantData = sibilantBufferTemp.getWritePointer(channel);
+
+        int counter = 0; // local hysteresis counter
+
+        for (int sample = 0; sample < numSamples; ++sample)
         {
-            // Sibilant detection: if above threshold, reset hysteresis counter
+            // Check threshold
             if (std::abs(sibilantData[sample]) > juce::Decibels::decibelsToGain(threshold))
             {
                 counter = hysteresisSamples;
@@ -105,21 +128,33 @@ void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& b
 
             if (counter > 0)
             {
-                // Mark sibilant region
-                counter--;
-                // Reduce sibilant in the processed buffer
-                processedData[sample] -= sibilantData[sample] * juce::Decibels::decibelsToGain(mixLevel);
+                // Still in sibilant region
+                --counter;
+                originalData[sample] -= sibilantData[sample];
             }
             else
             {
-                // Outside sibilant region, zero out in sibilant buffer
+                // Outside sibilant region
                 sibilantData[sample] = 0.0f;
             }
         }
     }
 
-    // Now sibilantBufferTemp contains only sibilant sounds where detected.
-    // Update the class member sibilantBuffer with the isolated sibilants.
+    // Mix adjusted sibilants back into the original signal
+    float gainFactor = juce::Decibels::decibelsToGain(mixLevel);
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        auto* originalData = originalBuffer.getWritePointer(channel);
+        auto* sibilantData = sibilantBufferTemp.getWritePointer(channel);
+        auto* finalData = buffer.getWritePointer(channel);
+
+        for (int sample = 0; sample < numSamples; ++sample)
+        {
+            finalData[sample] = originalData[sample] + gainFactor * sibilantData[sample];
+        }
+    }
+
+    // Update the class member sibilantBuffer for visualization
     sibilantBuffer.makeCopyOf(sibilantBufferTemp);
 }
 
