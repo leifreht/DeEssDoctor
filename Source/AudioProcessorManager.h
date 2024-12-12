@@ -25,12 +25,16 @@ public:
     void processBlock(juce::AudioBuffer<float>& buffer);
     void processFileForSibilants(const juce::File& file);
 
+    const juce::AudioBuffer<float>& getOriginalBuffer() const { return originalBuffer; }
     const juce::AudioBuffer<float>& getProcessedBuffer() const { return processedBuffer; }
+    const juce::AudioBuffer<float>& getSibilantBuffer() const { return sibilantBuffer; }
 
     void setDeEssingAlgorithm(std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> algorithm);
 
 private:
+    juce::AudioBuffer<float> originalBuffer;
     juce::AudioBuffer<float> processedBuffer;
+    juce::AudioBuffer<float> sibilantBuffer;
 
     // Filters for default de-essing algorithm
     juce::dsp::LinkwitzRileyFilter<float> highPassFilter;

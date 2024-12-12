@@ -84,6 +84,25 @@ waveformDisplay(512, formatManager, waveformCache),
         );
         DBG("Hysteresis Slider Changed: " << filterControl.hysteresisSlider.getValue() << " dB");
     };
+    
+    originalButton.onClick = [this]() {
+        playbackMode = PlaybackMode::Original;
+        processFile(); // Reload the file with the selected playback mode
+    };
+
+    sibilantsButton.onClick = [this]() {
+        playbackMode = PlaybackMode::SibilantsOnly;
+        processFile();
+    };
+
+    deEssedButton.onClick = [this]() {
+        playbackMode = PlaybackMode::DeEssed;
+        processFile();
+    };
+
+    addAndMakeVisible(originalButton);
+    addAndMakeVisible(sibilantsButton);
+    addAndMakeVisible(deEssedButton);
 
     setSize(1200, 800);
     
@@ -106,6 +125,7 @@ void MainComponent::processFile()
         return;
     }
 
+    // Set de-essing parameters
     processorManager.setDeEssingParameters(
         filterControl.getThreshold(),
         filterControl.getReduction(),
@@ -113,10 +133,13 @@ void MainComponent::processFile()
         filterControl.getHysteresis()
     );
 
+    // Process the file offline
     processorManager.processFileForSibilants(loadedFile);
 
-    transportSource.setSource(nullptr); 
+    // Release the previous source before assigning a new one
+    transportSource.setSource(nullptr); // Important to avoid EXC_BAD_ACCESS
 
+    // Create a new BufferAudioSource with the processed buffer
     auto reader = formatManager.createReaderFor(loadedFile);
     if (reader == nullptr)
     {
@@ -125,10 +148,13 @@ void MainComponent::processFile()
     }
 
     bufferAudioSource = std::make_unique<BufferAudioSource>(processorManager.getProcessedBuffer(), reader->sampleRate);
-    transportSource.setSource(bufferAudioSource.get(), 0, nullptr);  // Set the new source
+    transportSource.setSource(bufferAudioSource.get(), 0, nullptr); // Assign the new source
 
+    // Update the waveform display with the processed buffer
     waveformDisplay.setSibilantBuffer(processorManager.getProcessedBuffer());
     repaint();
+
+    DBG("Processing complete and new source set.");
 }
 
 
@@ -234,6 +260,10 @@ void MainComponent::resized()
     bottomSection.items.add(juce::FlexItem(filterControl).withFlex(1.0f));  // Filter controls
     bottomSection.items.add(juce::FlexItem(algorithmSelector).withFlex(1.0f));  // Algorithm selector
     bottomSection.performLayout(bounds);
+    
+    originalButton.setBounds(10, 10, 100, 30);
+    sibilantsButton.setBounds(120, 10, 100, 30);
+    deEssedButton.setBounds(230, 10, 100, 30);
 }
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)

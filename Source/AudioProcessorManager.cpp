@@ -61,10 +61,20 @@ void AudioProcessorManager::processFileForSibilants(const juce::File& file)
         return;
     }
 
+    // Resize buffers
+    originalBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
     processedBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
-    reader->read(&processedBuffer, 0, (int)reader->lengthInSamples, 0, true, true);
+    sibilantBuffer.setSize((int)reader->numChannels, (int)reader->lengthInSamples);
 
+    // Read the audio data into originalBuffer
+    reader->read(&originalBuffer, 0, (int)reader->lengthInSamples, 0, true, true);
+
+    // Copy the original audio to processedBuffer for modification
+    processedBuffer.makeCopyOf(originalBuffer);
+
+    // Apply the selected algorithm to generate sibilants and de-essed audio
     deEssingAlgorithm(processedBuffer, threshold, mixLevel, frequency, hysteresisSamples);
+//    deEssingAlgorithm(processedBuffer, sibilantBuffer, threshold, mixLevel, frequency, hysteresisSamples);
 }
 
 void AudioProcessorManager::defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples)

@@ -6,8 +6,7 @@
 #include "WaveformDisplay.h"
 #include "PositionOverlay.h"
 #include "AudioProcessorManager.h"
-#include "Algorithms.h"
-#include "BufferAudioSource.h"
+#include "BufferAudioSource.h" // Include your custom BufferAudioSource class
 
 class MainComponent : public juce::AudioAppComponent, public juce::ChangeListener
 {
@@ -19,17 +18,55 @@ public:
     void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
     void resized() override;
-    
-    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
-    
-    void processFile();
-    
-//    void paint(juce::Graphics& g) override;
 
+    void changeListenerCallback(juce::ChangeBroadcaster* source) override;
+
+    void processFile();
 
 private:
-    juce::File loadedFile; 
-    
+    // Enum for playback modes
+    enum class PlaybackMode
+    {
+        Original,       // Unprocessed audio
+        SibilantsOnly,  // Isolated sibilants
+        DeEssed         // Audio with sibilants removed
+    };
+
+    // Member variables
+    PlaybackMode playbackMode = PlaybackMode::Original; // Default to original playback mode
+
+    juce::File loadedFile; // Currently loaded file
+
+    // Transport controls
+    juce::TextButton openButton;
+    juce::TextButton playButton;
+    juce::TextButton stopButton;
+    juce::TextButton processButton{"Process"};
+
+    juce::TextButton originalButton{"Original"};
+    juce::TextButton sibilantsButton{"Sibilants"};
+    juce::TextButton deEssedButton{"De-Essed"};
+
+    // JUCE components
+    std::unique_ptr<juce::FileChooser> chooser;
+    juce::AudioFormatManager formatManager;
+    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
+    juce::AudioTransportSource transportSource;
+
+    std::unique_ptr<BufferAudioSource> bufferAudioSource; // Custom audio source for playback
+
+    juce::AudioThumbnailCache waveformCache;
+    WaveformDisplay waveformDisplay;
+    PositionOverlay positionOverlay;
+
+    juce::Label fileLabel;
+
+    AlgorithmSelector algorithmSelector;
+    FilterControl filterControl;
+
+    AudioProcessorManager processorManager;
+
+    // Transport state management
     enum TransportState
     {
         Stopped,
@@ -37,36 +74,14 @@ private:
         Playing,
         Stopping
     };
+
+    TransportState state;
+
     void changeState(TransportState newState);
     void transportSourceChanged();
     void openButtonClicked();
     void playButtonClicked();
     void stopButtonClicked();
-    
-    juce::TextButton openButton;
-    juce::TextButton playButton;
-    juce::TextButton stopButton;
-    juce::TextButton processButton{"Process"}; 
-    
-    std::unique_ptr<juce::FileChooser> chooser;
 
-    juce::AudioFormatManager formatManager;
-    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
-    juce::AudioTransportSource transportSource;
-    TransportState state;
-    juce::AudioThumbnailCache waveformCache;
-    WaveformDisplay waveformDisplay;
-    PositionOverlay positionOverlay;
-    
-    juce::Label fileLabel;
-    
-    AlgorithmSelector algorithmSelector;
-    FilterControl filterControl;
-    
-    AudioProcessorManager processorManager;
-    
-    std::unique_ptr<BufferAudioSource> bufferAudioSource;
-
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
