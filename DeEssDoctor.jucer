@@ -29,6 +29,10 @@
             file="Source/PositionOverlay.h"/>
       <FILE id="dMKGZQ" name="AudioProcessorManager.cpp" compile="1" resource="0"
             file="Source/AudioProcessorManager.cpp"/>
+      <FILE id="drmc7N" name="BufferAudioSource.cpp" compile="1" resource="0"
+            file="Source/BufferAudioSource.cpp"/>
+      <FILE id="UA6reC" name="BufferAudioSource.h" compile="0" resource="0"
+            file="Source/BufferAudioSource.h"/>
       <FILE id="KMrMB8" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="GixoiF" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="GsDCpY" name="MainComponent.cpp" compile="1" resource="0"

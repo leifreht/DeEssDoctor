@@ -98,6 +98,38 @@ MainComponent::~MainComponent()
     shutdownAudio();
 }
 
+void MainComponent::processFile()
+{
+    if (!loadedFile.existsAsFile())
+    {
+        DBG("No file loaded to process!");
+        return;
+    }
+
+    processorManager.setDeEssingParameters(
+        filterControl.getThreshold(),
+        filterControl.getReduction(),
+        filterControl.getFrequency(),
+        filterControl.getHysteresis()
+    );
+
+    processorManager.processFileForSibilants(loadedFile);
+
+    auto& processedBuffer = processorManager.getProcessedBuffer();
+    auto reader = formatManager.createReaderFor(loadedFile);
+    if (reader == nullptr)
+    {
+        DBG("Failed to create AudioFormatReader for the file.");
+        return;
+    }
+
+    bufferAudioSource = std::make_unique<BufferAudioSource>(processorManager.getProcessedBuffer(), reader->sampleRate);
+    transportSource.setSource(bufferAudioSource.get());
+    waveformDisplay.setSibilantBuffer(processedBuffer);
+    repaint();
+}
+
+
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
@@ -128,24 +160,33 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    if (!readerSource || processorManager.getProcessedBuffer().getNumSamples() == 0)
-    {
-        bufferToFill.clearActiveBufferRegion();
-        return;
-    }
-
-    auto& processedBuffer = processorManager.getProcessedBuffer();
-    auto numSamples = bufferToFill.buffer->getNumSamples();
-    auto startSample = bufferToFill.startSample;
-
-    for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
-    {
-        auto* dest = bufferToFill.buffer->getWritePointer(channel, startSample);
-        auto* src = processedBuffer.getReadPointer(channel);
-
-        for (int i = 0; i < numSamples; ++i)
-            dest[i] = src[i];
-    }
+    if (readerSource.get() == nullptr)
+        {
+            bufferToFill.clearActiveBufferRegion();
+        }
+        else
+        {
+            transportSource.getNextAudioBlock(bufferToFill);
+        }
+    
+//    if (!readerSource || processorManager.getProcessedBuffer().getNumSamples() == 0)
+//    {
+//        bufferToFill.clearActiveBufferRegion();
+//        return;
+//    }
+//
+//    auto& processedBuffer = processorManager.getProcessedBuffer();
+//    auto numSamples = bufferToFill.buffer->getNumSamples();
+//    auto startSample = bufferToFill.startSample;
+//
+//    for (int channel = 0; channel < bufferToFill.buffer->getNumChannels(); ++channel)
+//    {
+//        auto* dest = bufferToFill.buffer->getWritePointer(channel, startSample);
+//        auto* src = processedBuffer.getReadPointer(channel);
+//
+//        for (int i = 0; i < numSamples; ++i)
+//            dest[i] = src[i];
+//    }
 }
 
 void MainComponent::releaseResources()
@@ -281,31 +322,6 @@ void MainComponent::stopButtonClicked()
     changeState(Stopping);
 }
 
-void MainComponent::processFile()
-{
-    if (!loadedFile.existsAsFile())
-    {
-        DBG("No file loaded to process!");
-        return;
-    }
-
-    processorManager.setDeEssingParameters(
-        filterControl.getThreshold(),
-        filterControl.getReduction(),
-        filterControl.getFrequency(),
-        filterControl.getHysteresis()
-    );
-
-    // Process the file for sibilants
-    processorManager.processFileForSibilants(loadedFile);
-
-    // Pass the processed sibilant data to the waveform display
-    juce::AudioBuffer<float> sibilantBuffer;
-    processorManager.getSibilantBuffer(sibilantBuffer);
-    waveformDisplay.setSibilantBuffer(sibilantBuffer);
-
-    repaint();
-}
 
 
 

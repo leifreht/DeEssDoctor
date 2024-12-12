@@ -5,9 +5,9 @@
 #include "FilterControl.h"
 #include "WaveformDisplay.h"
 #include "PositionOverlay.h"
-//#include "MixerControl.h"
 #include "AudioProcessorManager.h"
 #include "Algorithms.h"
+#include "BufferAudioSource.h"
 
 class MainComponent : public juce::AudioAppComponent, public juce::ChangeListener
 {
@@ -64,6 +64,8 @@ private:
     FilterControl filterControl;
     
     AudioProcessorManager processorManager;
+    
+    std::unique_ptr<BufferAudioSource> bufferAudioSource;
 
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
