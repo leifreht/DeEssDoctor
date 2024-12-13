@@ -45,11 +45,11 @@ private:
     juce::TextButton deEssedButton{"De-Essed"};
 
     // Algorithm Radio Buttons
-    juce::ToggleButton sampleBasedButton{"Sample-based"};
-    juce::ToggleButton rmsBasedButton{"RMS-based"};
-    juce::ToggleButton fftBasedButton{"FFT-based"};
+    juce::TextButton sampleBasedButton {"Sample-based"};
+    juce::TextButton rmsBasedButton    {"RMS-based"};
+    juce::TextButton fftBasedButton    {"FFT-based"};
 
-    std::unique_ptr<juce::FileChooser> chooser; 
+    std::unique_ptr<juce::FileChooser> chooser;
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     juce::AudioTransportSource transportSource;

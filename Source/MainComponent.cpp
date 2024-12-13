@@ -36,27 +36,55 @@ MainComponent::MainComponent()
     fileLabel.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(fileLabel);
 
-    // Playback mode buttons
-    originalButton.onClick = [this]() { playbackMode = PlaybackMode::Original; updatePlaybackSource(); };
-    sibilantsButton.onClick = [this]() { playbackMode = PlaybackMode::SibilantsOnly; updatePlaybackSource(); };
-    deEssedButton.onClick = [this]() { playbackMode = PlaybackMode::DeEssed; updatePlaybackSource(); };
-
+    // Mode buttons as toggleable TextButtons with a radio group
+    int modeRadioGroup = 2345;
+    originalButton.setClickingTogglesState(true);
+    originalButton.setRadioGroupId(modeRadioGroup);
+    originalButton.setToggleState(true, juce::dontSendNotification); // default selected
+    originalButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    originalButton.onClick = [this]() {
+        playbackMode = PlaybackMode::Original;
+        updatePlaybackSource();
+    };
     addAndMakeVisible(originalButton);
+
+    sibilantsButton.setClickingTogglesState(true);
+    sibilantsButton.setRadioGroupId(modeRadioGroup);
+    sibilantsButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    sibilantsButton.onClick = [this]() {
+        playbackMode = PlaybackMode::SibilantsOnly;
+        updatePlaybackSource();
+    };
     addAndMakeVisible(sibilantsButton);
+
+    deEssedButton.setClickingTogglesState(true);
+    deEssedButton.setRadioGroupId(modeRadioGroup);
+    deEssedButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    deEssedButton.onClick = [this]() {
+        playbackMode = PlaybackMode::DeEssed;
+        updatePlaybackSource();
+    };
     addAndMakeVisible(deEssedButton);
 
-    // Algorithm Radio Buttons
-    sampleBasedButton.setRadioGroupId(1234);
-    rmsBasedButton.setRadioGroupId(1234);
-    fftBasedButton.setRadioGroupId(1234);
-
-    sampleBasedButton.setToggleState(true, juce::dontSendNotification);
-    sampleBasedButton.onClick = [this] { algorithmChanged(AlgorithmType::SampleBased); };
-    rmsBasedButton.onClick = [this] { algorithmChanged(AlgorithmType::RMSBased); };
-    fftBasedButton.onClick = [this] { algorithmChanged(AlgorithmType::FFTBased); };
-
+    // Algorithm buttons as toggleable TextButtons with a radio group
+    int algoRadioGroup = 3456;
+    sampleBasedButton.setClickingTogglesState(true);
+    sampleBasedButton.setRadioGroupId(algoRadioGroup);
+    sampleBasedButton.setToggleState(true, juce::dontSendNotification); // default selected
+    sampleBasedButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    sampleBasedButton.onClick = [this]() { algorithmChanged(AlgorithmType::SampleBased); };
     addAndMakeVisible(sampleBasedButton);
+
+    rmsBasedButton.setClickingTogglesState(true);
+    rmsBasedButton.setRadioGroupId(algoRadioGroup);
+    rmsBasedButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    rmsBasedButton.onClick = [this]() { algorithmChanged(AlgorithmType::RMSBased); };
     addAndMakeVisible(rmsBasedButton);
+
+    fftBasedButton.setClickingTogglesState(true);
+    fftBasedButton.setRadioGroupId(algoRadioGroup);
+    fftBasedButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::darkblue);
+    fftBasedButton.onClick = [this]() { algorithmChanged(AlgorithmType::FFTBased); };
     addAndMakeVisible(fftBasedButton);
 
     setSize(1200, 800);
