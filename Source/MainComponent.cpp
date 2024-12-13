@@ -230,11 +230,13 @@ void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
 
-    const int topSectionHeight = bounds.getHeight() / 16;
-    const int middleSectionHeight = bounds.getHeight() / 2;
-    const int transportSectionHeight = bounds.getHeight() / 16;
+    // Heights for different sections
+    const int topSectionHeight = bounds.getHeight() / 16;    // For file label, open, process
+    const int waveformHeight   = bounds.getHeight() / 2;     // Waveform area
+    const int buttonRowHeight  = bounds.getHeight() / 16;    // Each row of buttons
+    const int bottomHeight     = bounds.getHeight() / 4;     // For all slider sets
 
-    // Top: File, open, process
+    // 1) Top section: File name, Open button, Process button
     {
         juce::FlexBox topSection;
         topSection.flexDirection = juce::FlexBox::Direction::row;
@@ -244,46 +246,61 @@ void MainComponent::resized()
         topSection.performLayout(bounds.removeFromTop(topSectionHeight));
     }
 
-    // Middle: waveform
-    auto middleSectionBounds = bounds.removeFromTop(middleSectionHeight);
-    waveformDisplay.setBounds(middleSectionBounds);
-    positionOverlay.setBounds(middleSectionBounds);
+    // 2) Waveform display
+    auto waveformArea = bounds.removeFromTop(waveformHeight);
+    waveformDisplay.setBounds(waveformArea);
+    positionOverlay.setBounds(waveformArea);
 
-    // Transport
+    // 3) Original / Sibilants / De-essed buttons (replaces old transport row)
+    {
+        juce::FlexBox modeSection;
+        modeSection.flexDirection = juce::FlexBox::Direction::row;
+        modeSection.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
+        modeSection.items.add(juce::FlexItem(originalButton).withFlex(1.0f));
+        modeSection.items.add(juce::FlexItem(sibilantsButton).withFlex(1.0f));
+        modeSection.items.add(juce::FlexItem(deEssedButton).withFlex(1.0f));
+        modeSection.performLayout(bounds.removeFromTop(buttonRowHeight));
+    }
+
+    // 4) Play / Stop buttons below the mode buttons
     {
         juce::FlexBox transportSection;
         transportSection.flexDirection = juce::FlexBox::Direction::row;
         transportSection.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
         transportSection.items.add(juce::FlexItem(playButton).withFlex(1.0f));
         transportSection.items.add(juce::FlexItem(stopButton).withFlex(1.0f));
-        transportSection.performLayout(bounds.removeFromTop(transportSectionHeight));
+        transportSection.performLayout(bounds.removeFromTop(buttonRowHeight));
     }
 
-    // Bottom: place all controls
-    // We'll arrange them in columns for clarity
+    // 5) Radio buttons for algorithms (horizontally placed)
+    {
+        juce::FlexBox algoSection;
+        algoSection.flexDirection = juce::FlexBox::Direction::row;
+        algoSection.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
+        algoSection.items.add(juce::FlexItem(sampleBasedButton).withFlex(1.0f));
+        algoSection.items.add(juce::FlexItem(rmsBasedButton).withFlex(1.0f));
+        algoSection.items.add(juce::FlexItem(fftBasedButton).withFlex(1.0f));
+        algoSection.performLayout(bounds.removeFromTop(buttonRowHeight));
+    }
+
+    // 6) Three columns for the slider sets at the bottom:
+    //    Left: Sample-based (FilterControl)
+    //    Middle: RMS (RmsControl)
+    //    Right: FFT (FftControl)
+
+    // We have the remainder of the window for the slider sets
     auto bottomArea = bounds;
-    int columnWidth = bottomArea.getWidth() / 4;
 
-    // Left column: algorithm radio buttons and playback mode buttons
-    auto leftCol = bottomArea.removeFromLeft(columnWidth);
-    originalButton.setBounds(leftCol.removeFromTop(30));
-    sibilantsButton.setBounds(leftCol.removeFromTop(30));
-    deEssedButton.setBounds(leftCol.removeFromTop(30));
+    int columnWidth = bottomArea.getWidth() / 3;
 
-    sampleBasedButton.setBounds(leftCol.removeFromTop(30));
-    rmsBasedButton.setBounds(leftCol.removeFromTop(30));
-    fftBasedButton.setBounds(leftCol.removeFromTop(30));
-
-    // Next column: Sample-based controls
     auto sampleCol = bottomArea.removeFromLeft(columnWidth);
-    filterControl.setBounds(sampleCol);
+    filterControl.setBounds(sampleCol.reduced(10));
 
-    // Next column: RMS-based controls
     auto rmsCol = bottomArea.removeFromLeft(columnWidth);
-    rmsControl.setBounds(rmsCol);
+    rmsControl.setBounds(rmsCol.reduced(10));
 
-    // Last column: FFT-based controls
-    fftControl.setBounds(bottomArea);
+    auto fftCol = bottomArea;
+    fftControl.setBounds(fftCol.reduced(10));
 }
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
