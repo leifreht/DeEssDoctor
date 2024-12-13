@@ -1,12 +1,13 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "AlgorithmSelector.h"
 #include "FilterControl.h"
 #include "WaveformDisplay.h"
 #include "PositionOverlay.h"
 #include "AudioProcessorManager.h"
-#include "BufferAudioSource.h" // Include your custom BufferAudioSource class
+#include "BufferAudioSource.h"
+#include "RmsControl.h"
+#include "FftControl.h"
 
 class MainComponent : public juce::AudioAppComponent, public juce::ChangeListener
 {
@@ -18,25 +19,20 @@ public:
     void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
     void resized() override;
-
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     void processFile();
 
 private:
-    // Enum for playback modes
-    enum class PlaybackMode
-    {
-        Original,       // Unprocessed audio
-        SibilantsOnly,  // Isolated sibilants
-        DeEssed         // Audio with sibilants removed
-    };
-
-    // Member variables
+    enum class PlaybackMode { Original, SibilantsOnly, DeEssed };
     PlaybackMode playbackMode = PlaybackMode::Original;
     void updatePlaybackSource();
 
-    juce::File loadedFile; // Currently loaded file
+    enum class AlgorithmType { SampleBased, RMSBased, FFTBased };
+    AlgorithmType currentAlgorithm = AlgorithmType::SampleBased;
+    void algorithmChanged(AlgorithmType newAlgorithm);
+
+    juce::File loadedFile;
 
     // Transport controls
     juce::TextButton openButton;
@@ -48,13 +44,16 @@ private:
     juce::TextButton sibilantsButton{"Sibilants"};
     juce::TextButton deEssedButton{"De-Essed"};
 
-    // JUCE components
-    std::unique_ptr<juce::FileChooser> chooser;
+    // Algorithm Radio Buttons
+    juce::ToggleButton sampleBasedButton{"Sample-based"};
+    juce::ToggleButton rmsBasedButton{"RMS-based"};
+    juce::ToggleButton fftBasedButton{"FFT-based"};
+
+    std::unique_ptr<juce::FileChooser> chooser; 
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     juce::AudioTransportSource transportSource;
-
-    std::unique_ptr<BufferAudioSource> bufferAudioSource; // Custom audio source for playback
+    std::unique_ptr<BufferAudioSource> bufferAudioSource;
 
     juce::AudioThumbnailCache waveformCache;
     WaveformDisplay waveformDisplay;
@@ -62,20 +61,13 @@ private:
 
     juce::Label fileLabel;
 
-    AlgorithmSelector algorithmSelector;
-    FilterControl filterControl;
+    FilterControl filterControl; // For sample-based
+    RmsControl rmsControl;       // For RMS-based
+    FftControl fftControl;       // For FFT-based
 
     AudioProcessorManager processorManager;
 
-    // Transport state management
-    enum TransportState
-    {
-        Stopped,
-        Starting,
-        Playing,
-        Stopping
-    };
-
+    enum TransportState { Stopped, Starting, Playing, Stopping };
     TransportState state;
 
     void changeState(TransportState newState);

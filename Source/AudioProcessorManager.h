@@ -32,6 +32,8 @@ public:
     void setDeEssingAlgorithm(std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> algorithm);
     
     double getSampleRate() const { return processedSampleRate; }
+    
+    void defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples);
 
 private:
     double processedSampleRate = 44100.0;
@@ -53,7 +55,4 @@ private:
 
     // Customizable de-essing algorithm
     std::function<void(juce::AudioBuffer<float>&, float, float, float, int)> deEssingAlgorithm;
-
-    // Default de-essing logic
-    void defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples);
 };
