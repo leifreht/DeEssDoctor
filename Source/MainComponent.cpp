@@ -111,7 +111,6 @@ void MainComponent::algorithmChanged(AlgorithmType newAlgorithm)
             processorManager.setDeEssingAlgorithm(
                 [this](juce::AudioBuffer<float>& buffer, float thr, float mix, float freq, int hyst)
                 {
-                    // Use default sample-based implementation
                     processorManager.defaultDeEssingAlgorithm(buffer, thr, mix, freq, hyst);
                 }
             );
@@ -120,8 +119,7 @@ void MainComponent::algorithmChanged(AlgorithmType newAlgorithm)
             processorManager.setDeEssingAlgorithm(
                 [this](juce::AudioBuffer<float>& buffer, float thr, float mix, float freq, int hyst)
                 {
-                    // Placeholder: pass-through RMS (no processing yet)
-                    // Just return buffer as-is for now
+                    processorManager.rmsDeEssingAlgorithm(buffer, thr, mix, freq, hyst);
                 }
             );
             break;
@@ -129,8 +127,7 @@ void MainComponent::algorithmChanged(AlgorithmType newAlgorithm)
             processorManager.setDeEssingAlgorithm(
                 [this](juce::AudioBuffer<float>& buffer, float thr, float mix, float freq, int hyst)
                 {
-                    // Placeholder: pass-through FFT (no processing yet)
-                    // Just return buffer as-is for now
+                    // Placeholder: pass-through FFT
                 }
             );
             break;

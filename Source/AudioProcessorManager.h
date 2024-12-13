@@ -34,6 +34,7 @@ public:
     double getSampleRate() const { return processedSampleRate; }
     
     void defaultDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisSamples);
+    void rmsDeEssingAlgorithm(juce::AudioBuffer<float>& buffer, float threshold, float mixLevel, float frequency, int hysteresisDb);
 
 private:
     double processedSampleRate = 44100.0;
