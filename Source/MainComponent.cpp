@@ -177,6 +177,9 @@ void MainComponent::updatePlaybackSource()
     double sampleRate = processorManager.getSampleRate(); // (Add a getter in processorManager if needed.)
     bufferAudioSource = std::make_unique<BufferAudioSource>(*chosenBuffer, sampleRate);
     transportSource.setSource(bufferAudioSource.get(), 0, nullptr);
+    transportSource.setPosition(0.0);
+    transportSource.stop();
+    changeState(Stopped);
 
     // Update waveform display's sibilant overlay to always show sibilants if needed
     waveformDisplay.setSibilantBuffer(processorManager.getSibilantBuffer());
